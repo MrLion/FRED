@@ -1,61 +1,20 @@
-import { OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_API_KEY, NL_SEARCH_SYSTEM_PROMPT } from './shared/ai-config.js';
-
-function ollamaHeaders() {
-  const h = { 'Content-Type': 'application/json' };
-  if (OLLAMA_API_KEY) h['Authorization'] = `Bearer ${OLLAMA_API_KEY}`;
-  return h;
-}
+import { interpretQuestion } from './shared/search-interpretation.js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const query = req.body?.query;
+  if (typeof query !== 'string' || !query.trim() || query.length > 1000) {
+    return res.status(400).json({ error: 'Enter a question between 1 and 1,000 characters.' });
   }
-
-  const { query } = req.body || {};
-
-  if (!OLLAMA_BASE_URL || !OLLAMA_MODEL) {
-    return res.status(500).json({ error: 'Ollama is not configured on the server' });
-  }
-  if (!query) {
-    return res.status(400).json({ error: 'Query is required' });
-  }
-
+  const { OLLAMA_BASE_URL: baseUrl, OLLAMA_MODEL: model, OLLAMA_API_KEY: apiKey } = process.env;
+  if (!baseUrl || !model) return res.status(503).json({ error: 'AI search is currently unavailable.' });
   try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-      method: 'POST',
-      headers: ollamaHeaders(),
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        messages: [
-          { role: 'system', content: NL_SEARCH_SYSTEM_PROMPT },
-          { role: 'user', content: query },
-        ],
-        stream: false,
-      }),
+    const interpretation = await interpretQuestion(query.trim(), { baseUrl, model, apiKey });
+    return res.status(200).json(interpretation);
+  } catch {
+    return res.status(502).json({
+      error: 'Your question could not be interpreted. Keyword search is still available.',
+      code: 'AI_INTERPRETATION_FAILED',
     });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      const msg = String(errData?.error || '') || `Ollama API error: ${response.status}`;
-      return res.status(502).json({ error: msg });
-    }
-
-    const data = await response.json();
-    const text = data?.message?.content || '';
-
-    try {
-      const parsed = JSON.parse(text);
-      return res.status(200).json({
-        searchTerms: parsed.searchTerms || [],
-        explanation: parsed.explanation || '',
-      });
-    } catch {
-      return res.status(200).json({
-        searchTerms: [query],
-        explanation: 'Could not interpret query — using original search terms.',
-      });
-    }
-  } catch (err) {
-    return res.status(500).json({ error: `Failed: ${err.message}` });
   }
 }

@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import { ANALYZE_SYSTEM_PROMPT, NL_SEARCH_SYSTEM_PROMPT } from './api/shared/ai-config.js'
+import nlSearchHandler from './api/nl-search.js'
+import { ANALYZE_SYSTEM_PROMPT } from './api/shared/ai-config.js'
 
 function ollamaHeaders() {
   const h = { 'Content-Type': 'application/json' };
@@ -85,87 +86,28 @@ function analyzeApiPlugin() {
   };
 }
 
-// Dev-only middleware to handle /api/nl-search (mirrors the Vercel serverless function)
+// Use the production search handler in development so response handling stays identical.
 function nlSearchApiPlugin() {
   return {
     name: 'nl-search-api',
     configureServer(server) {
       server.middlewares.use('/api/nl-search', async (req, res) => {
-        if (req.method !== 'POST') {
-          res.statusCode = 405;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'Method not allowed' }));
-          return;
-        }
-
+        const reply = {
+          status(code) { res.statusCode = code; return this; },
+          json(data) { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); },
+        };
+        if (req.method !== 'POST') return nlSearchHandler(req, reply);
         let body = '';
-        for await (const chunk of req) body += chunk;
-        let parsed;
         try {
-          parsed = JSON.parse(body);
+          for await (const chunk of req) {
+            body += chunk;
+            if (body.length > 16000) return reply.status(413).json({ error: 'Request is too large.' });
+          }
+          req.body = JSON.parse(body);
         } catch {
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'Invalid JSON request body' }));
-          return;
+          return reply.status(400).json({ error: 'Invalid JSON request body' });
         }
-        const { query } = parsed;
-
-        if (!process.env.OLLAMA_BASE_URL || !process.env.OLLAMA_MODEL) {
-          res.statusCode = 500;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'Ollama is not configured on the server' }));
-          return;
-        }
-        if (!query) {
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'Query is required' }));
-          return;
-        }
-
-        try {
-          const headers = ollamaHeaders();
-          const response = await fetch(`${process.env.OLLAMA_BASE_URL}/api/chat`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              model: process.env.OLLAMA_MODEL,
-              messages: [
-                { role: 'system', content: NL_SEARCH_SYSTEM_PROMPT },
-                { role: 'user', content: query },
-              ],
-              stream: false,
-            }),
-          });
-
-          if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            res.statusCode = 502;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: String(errData?.error || '') || `Ollama API error: ${response.status}` }));
-            return;
-          }
-
-          const data = await response.json();
-          const text = data?.message?.content || '';
-          try {
-            const parsed = JSON.parse(text);
-            res.end(JSON.stringify({
-              searchTerms: parsed.searchTerms || [],
-              explanation: parsed.explanation || '',
-            }));
-          } catch {
-            res.end(JSON.stringify({
-              searchTerms: [query],
-              explanation: 'Could not interpret query — using original search terms.',
-            }));
-          }
-        } catch (err) {
-          res.statusCode = 500;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: `Failed: ${err.message}` }));
-        }
+        return nlSearchHandler(req, reply);
       });
     },
   };
