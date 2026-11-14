@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     res.status(response.status);
     res.setHeader('Content-Type', 'application/json');
     res.end(data);
-  } catch (err) {
+  } catch {
     return res.status(502).json({ error: 'Failed to reach FRED API' });
   }
 }

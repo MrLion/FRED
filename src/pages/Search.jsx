@@ -1,201 +1,94 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { searchSeries } from '../api/fred';
+import { interpretSearch, isQuestion, searchSuggestions, questionStartDate } from '../features/search/search';
+import { BrowseTabs } from '../features/browse/BrowseLayout';
 import SeriesCard from '../components/SeriesCard';
 import Loading, { ErrorMessage } from '../components/Loading';
-import { Sparkles, Search as SearchIcon } from 'lucide-react';
-
-function isNaturalLanguage(query) {
-  const q = query.toLowerCase().trim();
-  // Handle contractions by using ['\s] instead of \b at word boundaries
-  const nlPatterns = /^(how|what|why|when|show|compare|tell|explain|find|which|where|is\s+there|are\s+there|has|have|did|does|do|can|what's|how's|where's|who's|why's|when's)['\s]/;
-  const hasQuestionMark = q.includes('?');
-  const wordCount = q.split(/\s+/).length;
-  return nlPatterns.test(q) || hasQuestionMark || wordCount >= 6;
-}
-
-async function nlSearch(query, signal) {
-  const res = await fetch('/api/nl-search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query }),
-    signal,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'NL search failed');
-  return data;
-}
+import { Sparkles, Search as SearchIcon, ArrowRight } from 'lucide-react';
 
 export default function Search() {
-  const [searchParams] = useSearchParams();
-  const query = searchParams.get('q') || '';
-  const [results, setResults] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [offset, setOffset] = useState(0);
-  const [aiExplanation, setAiExplanation] = useState(null);
-  const [aiTerms, setAiTerms] = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const query = (params.get('q') || '').trim();
+  const start = questionStartDate(query);
+  const keyword = params.get('mode') === 'keyword';
+  const input = useRef(null);
+  const [state, setState] = useState({ key: '', results: [], total: 0, loading: false });
+  const [retry, setRetry] = useState(0);
+  const active = useRef(null);
+  const pageLock = useRef(false);
+  const key = JSON.stringify([query, keyword]);
 
   useEffect(() => {
-    if (!query) return;
     const controller = new AbortController();
-    const { signal } = controller;
-
-    async function search() {
-      setLoading(true);
-      setError(null);
-      setOffset(0);
-      setAiExplanation(null);
-      setAiTerms(null);
-
-      const useNL = isNaturalLanguage(query);
-
-      if (useNL) {
-        // AI-powered natural language search
-        setAiLoading(true);
-        try {
-          const nlResult = await nlSearch(query, signal);
-
-          setAiExplanation(nlResult.explanation);
-          setAiTerms(nlResult.searchTerms);
-          setAiLoading(false);
-
-          // Search FRED for each extracted term and merge results
-          const terms = nlResult.searchTerms || [];
-          if (terms.length === 0) {
-            // Fallback to original query
-            const data = await searchSeries(query, { limit: 50, offset: 0 }, signal);
-            setResults(data.series);
-            setTotal(data.count);
-          } else {
-            const allResults = await Promise.all(
-              terms.map(term => searchSeries(term, { limit: 20, offset: 0 }, signal).catch(() => ({ series: [], count: 0 })))
-            );
-
-            // Merge and deduplicate by series ID
-            const seen = new Set();
-            const merged = [];
-            for (const data of allResults) {
-              for (const s of data.series) {
-                if (!seen.has(s.id)) {
-                  seen.add(s.id);
-                  merged.push(s);
-                }
-              }
-            }
-            setResults(merged);
-            setTotal(merged.length);
-          }
-        } catch (err) {
-          if (err.name === 'AbortError') return;
-          setAiLoading(false);
-          // Fallback to standard search on AI failure
+    active.current = controller;
+    pageLock.current = false;
+    if (!query) return () => controller.abort();
+    async function run() {
+      let next = { key, results: [], total: 0, loading: true, mode: 'keyword', offset: 0 };
+      setState(next);
+      try {
+        if (isQuestion(query) && !keyword) {
           try {
-            const data = await searchSeries(query, { limit: 50, offset: 0 }, signal);
-            setResults(data.series);
-            setTotal(data.count);
-          } catch (fallbackErr) {
-            if (fallbackErr.name === 'AbortError') return;
-            setError(fallbackErr.message);
+            const interpreted = await interpretSearch(query, controller.signal);
+            if (!interpreted.searchTerms.length) throw new Error('No search terms');
+            const suggestions = await searchSuggestions(interpreted.searchTerms, controller.signal);
+            next = { ...next, results: suggestions.series, total: suggestions.series.length, mode: 'suggested', interpretation: interpreted, notice: suggestions.partial ? 'Some suggested searches are unavailable. Showing the matches we could load.' : null };
+          } catch {
+            if (controller.signal.aborted) return;
+            const data = await searchSeries(query, {}, controller.signal);
+            next = { ...next, results: data.series, total: data.count, notice: 'AI interpretation is unavailable. Showing keyword results for your question.' };
           }
+        } else {
+          const data = await searchSeries(query, {}, controller.signal);
+          next = { ...next, results: data.series, total: data.count };
         }
-      } else {
-        // Standard FRED keyword search
-        try {
-          const data = await searchSeries(query, { limit: 50, offset: 0 }, signal);
-          setResults(data.series);
-          setTotal(data.count);
-        } catch (err) {
-          if (err.name === 'AbortError') return;
-          setError(err.message);
-        }
+        if (!controller.signal.aborted) setState({ ...next, loading: false });
+      } catch (error) {
+        if (!controller.signal.aborted) setState({ ...next, loading: false, error: error.message });
       }
-
-      setLoading(false);
     }
-
-    search();
+    run();
     return () => controller.abort();
-  }, [query]);
+  }, [query, keyword, key, retry]);
 
-  const loadMore = async () => {
-    const newOffset = offset + 50;
+  const current = state.key === key ? state : { results: [], loading: Boolean(query), total: 0 };
+  async function loadMore() {
+    if (pageLock.current || current.loading || current.mode !== 'keyword') return;
+    pageLock.current = true;
+    const controller = active.current;
+    setState(prev => ({ ...prev, paging: true, pageError: null }));
     try {
-      // For NL search, load more uses the first AI term or original query
-      const searchQuery = aiTerms?.[0] || query;
-      const data = await searchSeries(searchQuery, { limit: 50, offset: newOffset });
-      setResults(prev => [...prev, ...data.series]);
-      setOffset(newOffset);
-      setTotal(data.count);
-    } catch (err) {
-      setError(err.message);
+      const offset = current.offset + 50;
+      const data = await searchSeries(query, { offset }, controller.signal);
+      if (!controller.signal.aborted) setState(prev => ({ ...prev, results: [...new Map([...prev.results, ...data.series].map(s => [s.id, s])).values()], total: data.count, offset, paging: false, exhausted: data.series.length === 0 }));
+    } catch (error) {
+      if (!controller.signal.aborted) setState(prev => ({ ...prev, paging: false, pageError: error.message }));
+    } finally {
+      if (!controller.signal.aborted) pageLock.current = false;
     }
-  };
-
-  if (!query) {
-    return (
-      <div className="page">
-        <div className="empty-state">
-          <SearchIcon size={48} />
-          <p>Search for economic data series</p>
-          <p style={{ fontSize: 13, marginTop: 4 }}>
-            Try natural language: "How has inflation changed since 2020?"
-          </p>
-        </div>
-      </div>
-    );
   }
 
   return (
     <div className="page search-page">
-      <h1 className="page-title">Results for "{query}"</h1>
-
-      {/* AI interpretation banner */}
-      {aiLoading && (
-        <div className="ai-search-banner ai-search-loading">
-          <Sparkles size={16} className="ai-search-icon" color="#0D9488" />
-          <span>AI is interpreting your question...</span>
-        </div>
-      )}
-
-      {aiExplanation && !aiLoading && (
-        <div className="ai-search-banner">
-          <Sparkles size={16} className="ai-search-icon" color="#0D9488" />
-          <div className="ai-search-content">
-            <span className="ai-search-explanation">{aiExplanation}</span>
-            {aiTerms && aiTerms.length > 0 && (
-              <div className="ai-search-terms">
-                {aiTerms.map((term, i) => (
-                  <span key={i} className="ai-search-term">{term}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {total > 0 && <p className="results-count">{total.toLocaleString()} series found</p>}
-
-      {loading && <Loading text="Searching..." />}
-      {error && <ErrorMessage message={error} />}
-
-      <div className="series-list">
-        {results.map(s => <SeriesCard key={s.id} series={s} />)}
-      </div>
-
-      {!aiTerms && results.length > 0 && results.length < total && (
-        <button className="btn-secondary load-more" onClick={loadMore}>
-          Load more ({results.length} of {total.toLocaleString()})
-        </button>
-      )}
-
-      {!loading && results.length === 0 && !error && (
-        <div className="empty-state">
-          <p>No results found for "{query}"</p>
-        </div>
-      )}
+      <div className="page-intro"><span className="eyebrow">DISCOVER THE DATA</span><h1 className="page-title">{query ? 'Find the signal.' : 'What would you like to explore?'}</h1><p>Search an indicator, enter a series ID, or ask a question in plain English.</p></div>
+      <BrowseTabs />
+      <form className="explore-search" onSubmit={event => { event.preventDefault(); const q = input.current.value.trim(); if (q) setParams({ q }); }}>
+        <SearchIcon size={21} /><input ref={input} key={query} defaultValue={query} aria-label="Search economic data or ask a question" placeholder="How has inflation changed since 2020?" /><button type="submit" aria-label="Search"><ArrowRight size={20} /></button>
+      </form>
+      {!query && <div className="suggested-queries"><span>Try a question</span>{['How has inflation changed since 2020?', 'Unemployment rate', 'GDP'].map(q => <button key={q} onClick={() => setParams({ q })}>{q}<ArrowRight size={15} /></button>)}</div>}
+      {query && <>
+        {current.loading && <Loading text={isQuestion(query) && !keyword ? 'Interpreting your question and finding relevant series…' : 'Finding economic data…'} />}
+        {current.interpretation && <div className="ai-search-banner"><Sparkles size={21} /><div><strong>Understanding your question</strong><p>{current.interpretation.explanation || `Suggested indicators for “${query}”`}</p><div className="ai-search-terms">{start && <span className="ai-search-term">Charts start in {start.slice(0, 4)}</span>}{current.interpretation.searchTerms.map(term => <button key={term} className="ai-search-term" onClick={() => setParams({ q: term, mode: 'keyword' })}>{term}</button>)}</div></div></div>}
+        {current.notice && <p className="search-notice" role="status">{current.notice}</p>}
+        {current.error && <ErrorMessage message={current.error} onRetry={() => setRetry(n => n + 1)} />}
+        {!current.loading && !current.error && <div className="results-heading"><h2>{current.mode === 'suggested' ? 'Suggested series' : `Results for “${query}”`}</h2><span>{current.total.toLocaleString()} {current.mode === 'suggested' ? 'suggested matches' : 'series'}</span></div>}
+        <div className="series-list">{current.results.map(series => <SeriesCard key={series.id} series={series} start={start} />)}</div>
+        {!current.loading && !current.error && !current.results.length && <div className="empty-state"><SearchIcon size={34} /><h2>No matching series</h2><p>Try a shorter phrase, a series ID, or browse topics.</p></div>}
+        {current.mode === 'suggested' && <button className="text-action" onClick={() => setParams({ q: query, mode: 'keyword' })}>Show keyword results <ArrowRight size={16} /></button>}
+        {current.pageError && <p role="alert">Could not load more: {current.pageError}</p>}
+        {current.mode === 'keyword' && !current.loading && current.results.length > 0 && current.results.length < current.total && !current.exhausted && <button className="btn-secondary load-more" disabled={current.paging} onClick={loadMore}>{current.paging ? 'Loading…' : `Load more · ${current.results.length} of ${current.total.toLocaleString()}`}</button>}
+      </>}
     </div>
   );
 }

@@ -1,3 +1,23 @@
+# Approved design update — November 13, 2026
+
+The user approved the Slate & Electric Blue preview for Overview, Search, and Series Detail. This update supersedes conflicting visual rules below; the older specification is retained for context.
+
+- Canvas #F5F7FB, surfaces #FFFFFF, text #172033, secondary text #596780, borders #DFE5EF.
+- Primary/action/chart blue #365CF5; selection tint #EEF2FF.
+- AI violet #7357D9 on pale lavender #F3EFFF. No decorative gradients.
+- Plus Jakarta Sans for headings, body, and headline values; tabular numerals; Geist Mono for compact IDs.
+- Persistent 220px white desktop navigation, mobile bottom navigation, white search header.
+- Overview: four live indicators with units, observation dates, neutral directional deltas, sparklines, a featured chart, recently viewed, and topics.
+- Search: retain automatic plain-English interpretation; clearly separate suggested matches from keyword result counts. Explicit since/from years carry into charts.
+- Series detail: large value, visible measurement and frequency, shareable ranges, continuous time-axis chart with missing-data gaps, optional AI explanation and provenance.
+- 12px panel corners, thin borders, minimal shadows, visible focus, reduced-motion support.
+- Browse pages share Search/Topics/Sources/Releases tabs, topic ancestor breadcrumbs, source accordions, name filters, and counted series pagination with title/popularity sorting.
+- Saved series and comparison remain future phases; do not show nonfunctional controls.
+
+Implementation: `src/styles/modern.css` layers the approved visual direction over legacy styles while remaining pages are migrated.
+
+---
+
 # Design System — FRED Economic Data
 
 ## Product Context

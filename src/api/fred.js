@@ -18,12 +18,12 @@ async function fredFetch(endpoint, params = {}, signal) {
   return res.json();
 }
 
-export async function getCategory(categoryId = 0) {
-  return fredFetch('category', { category_id: categoryId });
+export async function getCategory(categoryId = 0, signal) {
+  return fredFetch('category', { category_id: categoryId }, signal);
 }
 
-export async function getCategoryChildren(categoryId = 0) {
-  const data = await fredFetch('category/children', { category_id: categoryId });
+export async function getCategoryChildren(categoryId = 0, signal) {
+  const data = await fredFetch('category/children', { category_id: categoryId }, signal);
   return data.categories || [];
 }
 
@@ -34,7 +34,7 @@ export async function getCategorySeries(categoryId, opts = {}) {
     offset: opts.offset || 0,
     order_by: opts.order_by || 'popularity',
     sort_order: opts.sort_order || 'desc',
-  });
+  }, opts.signal);
   return { series: extractSeries(data), count: data.count || 0 };
 }
 
@@ -44,16 +44,23 @@ export async function getSeries(seriesId) {
 }
 
 export async function getSeriesObservations(seriesId, opts = {}) {
-  const data = await fredFetch('series/observations', {
-    series_id: seriesId,
-    limit: opts.limit || 10000,
-    observation_start: opts.start,
-    observation_end: opts.end,
-    frequency: opts.frequency,
-    units: opts.units,
-    sort_order: opts.sort_order,
-  });
-  return (data.observations || []).filter(o => o.value !== '.');
+  const limit = opts.limit || 10000;
+  let observations = [];
+  let offset = 0;
+  let count;
+  do {
+    const data = await fredFetch('series/observations', {
+      series_id: seriesId, limit, offset,
+      observation_start: opts.start, observation_end: opts.end,
+      frequency: opts.frequency, units: opts.units, sort_order: opts.sort_order,
+    }, opts.signal);
+    const page = data.observations || [];
+    observations = observations.concat(page);
+    count = data.count ?? observations.length;
+    offset += page.length;
+    if (!page.length) break;
+  } while (opts.all && offset < count);
+  return observations;
 }
 
 export async function searchSeries(query, opts = {}, signal) {
@@ -66,33 +73,44 @@ export async function searchSeries(query, opts = {}, signal) {
   return { series: extractSeries(data), count: data.count || 0 };
 }
 
-export async function getSources() {
-  const data = await fredFetch('sources', { limit: 1000, order_by: 'name' });
-  return data.sources || [];
+async function fredDirectory(endpoint, field, params, signal) {
+  const items = [];
+  let offset = 0;
+  let count;
+  do {
+    const data = await fredFetch(endpoint, { ...params, limit: 1000, offset }, signal);
+    const page = data[field] || [];
+    items.push(...page);
+    offset += page.length;
+    count = data.count ?? offset;
+    if (!page.length) break;
+  } while (offset < count);
+  return [...new Map(items.map(item => [item.id, item])).values()];
 }
 
-export async function getSourceReleases(sourceId) {
-  const data = await fredFetch('source/releases', { source_id: sourceId, limit: 1000 });
-  return data.releases || [];
+export async function getSources(opts = {}) {
+  return fredDirectory('sources', 'sources', { order_by: 'name' }, opts.signal);
+}
+
+export async function getSourceReleases(sourceId, opts = {}) {
+  return fredDirectory('source/releases', 'releases', { source_id: sourceId, order_by: 'name' }, opts.signal);
 }
 
 export async function getReleases(opts = {}) {
-  const data = await fredFetch('releases', {
-    limit: opts.limit || 100,
-    offset: opts.offset || 0,
-    order_by: opts.order_by || 'name',
-  });
-  return data.releases || [];
+  return fredDirectory('releases', 'releases', { order_by: opts.order_by || 'name' }, opts.signal);
 }
 
-export async function getReleaseSeries(releaseId) {
+export async function getRelease(releaseId, signal) {
+  const data = await fredFetch('release', { release_id: releaseId }, signal);
+  return data.releases?.[0] || null;
+}
+
+export async function getReleaseSeries(releaseId, opts = {}) {
   const data = await fredFetch('release/series', {
-    release_id: releaseId,
-    limit: 200,
-    order_by: 'popularity',
-    sort_order: 'desc',
-  });
-  return extractSeries(data);
+    release_id: releaseId, limit: opts.limit || 50, offset: opts.offset || 0,
+    order_by: opts.order_by || 'popularity', sort_order: opts.sort_order || 'desc',
+  }, opts.signal);
+  return { series: extractSeries(data), count: data.count || 0 };
 }
 
 let _recessionCache = null;

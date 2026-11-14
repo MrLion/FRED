@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { getSeries, getSeriesObservations, getRecessionPeriods } from '../api/fred';
-import Chart from '../components/Chart';
+import Chart from '../components/LazyChart';
 import AiNarrator from '../components/AiNarrator';
 import Loading, { ErrorMessage } from '../components/Loading';
 import { TrendingUp, TrendingDown, ExternalLink } from 'lucide-react';
@@ -30,28 +30,29 @@ function DeltaChip({ current, prior }) {
 
 export default function SeriesDetail({ onView }) {
   const { id } = useParams();
+  const [params, setParams] = useSearchParams();
+  const range = params.get('range') || 'Max';
+  const start = /^\d{4}-\d{2}-\d{2}$/.test(params.get('start') || '') ? params.get('start') : null;
   const [series, setSeries] = useState(null);
   const [observations, setObservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [range, setRange] = useState('Max');
   const [recessionPeriods, setRecessionPeriods] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
+    getRecessionPeriods().then(periods => { if (!cancelled) setRecessionPeriods(periods); }).catch(() => {});
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        const [seriesData, obsData, recessions] = await Promise.all([
+        const [seriesData, obsData] = await Promise.all([
           getSeries(id),
-          getSeriesObservations(id),
-          getRecessionPeriods(),
+          getSeriesObservations(id, { all: true }),
         ]);
         if (cancelled) return;
         setSeries(seriesData);
         setObservations(obsData);
-        setRecessionPeriods(recessions);
         if (seriesData) {
           onView({ id: seriesData.id, title: seriesData.title, frequency: seriesData.frequency });
         }
@@ -63,14 +64,15 @@ export default function SeriesDetail({ onView }) {
     }
     load();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, onView]);
 
-  if (loading) return <Loading text="Loading series data..." />;
+  if (loading || (series && series.id !== id)) return <Loading text="Loading series data..." />;
   if (error) return <ErrorMessage message={error} />;
   if (!series) return <ErrorMessage message="Series not found" />;
 
   const filteredObs = (() => {
     const selected = RANGES.find(r => r.label === range);
+    if (start) return observations.filter(o => o.date >= start);
     if (!selected?.years) return observations;
     const cutoff = new Date();
     cutoff.setFullYear(cutoff.getFullYear() - selected.years);
@@ -78,15 +80,16 @@ export default function SeriesDetail({ onView }) {
     return observations.filter(o => o.date >= cutoffStr);
   })();
 
-  const latest = observations.length > 0 ? observations[observations.length - 1] : null;
-  const prior = observations.length > 1 ? observations[observations.length - 2] : null;
+  const valid = observations.filter(o => o.value !== '.' && Number.isFinite(Number(o.value)));
+  const latest = valid.at(-1);
+  const prior = valid.at(-2);
 
   return (
     <div className="page series-detail-page">
       {/* Identity zone */}
       <div className="series-detail-header">
-        <span className="series-detail-id">{series.id}</span>
-        <h1 className="series-detail-title">{series.title}</h1>
+        <span className="eyebrow">SERIES EXPLORER</span><span className="series-detail-id">{series.id}</span>
+        <h1 className="series-detail-title">{series.title}</h1><p className="series-detail-subtitle">{series.frequency} · {series.seasonal_adjustment}</p>
       </div>
 
       {/* Hero number zone */}
@@ -99,28 +102,30 @@ export default function SeriesDetail({ onView }) {
               current={Number(latest.value)}
               prior={prior ? Number(prior.value) : null}
             />
-            <span className="latest-date">{latest.date}</span>
+            <span className="latest-date">vs prior observation · Latest observation {latest.date}</span>
           </div>
         </div>
       )}
 
       {/* Chart zone */}
-      <div className="range-selector">
+      <div className="chart-toolbar"><div className="range-selector">{start && <button className="range-btn active" aria-pressed="true" onClick={() => setParams({})}>Since {start.slice(0, 4)} ×</button>}
         {RANGES.map(r => (
           <button
             key={r.label}
-            className={`range-btn ${range === r.label ? 'active' : ''}`}
-            onClick={() => setRange(r.label)}
+            className={`range-btn ${!start && range === r.label ? 'active' : ''}`}
+            aria-pressed={!start && range === r.label}
+            onClick={() => setParams({ range: r.label })}
           >
             {r.label}
           </button>
         ))}
-      </div>
+      </div></div>
 
       <Chart observations={filteredObs} title={series.title} recessionPeriods={recessionPeriods} />
 
       {/* Insight zone */}
-      <AiNarrator series={series} observations={filteredObs} />
+      <AiNarrator key={`${id}:${range}:${start}:${latest?.date}`} series={series} observations={filteredObs} />
+
 
       {/* Provenance zone */}
       <div className="series-meta">

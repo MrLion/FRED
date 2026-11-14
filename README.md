@@ -2,6 +2,14 @@
 
 A web application for browsing and visualizing economic data from the Federal Reserve Bank of St. Louis (FRED). Built as a web-based alternative to the official FRED mobile app, with full support for smartphones, tablets, and desktops.
 
+## Design refresh
+
+The approved Slate & Electric Blue refresh is implemented for the responsive shell, overview, search results, series detail, and topic/source/release browsing. Plain-English search still uses the configured Ollama service. If AI is unavailable, keyword search remains available and a clear notice appears.
+
+Explicit “since 2020” / “from 2020” questions carry that start year into result chart links. Charts retain missing observations, fetch complete histories, and provide shareable range controls. Saved series and comparison are future phases.
+
+Browsing includes topic breadcrumbs, direct category series alongside subtopics, source and release name filters, expandable source publications, and paginated series sorted by popularity or title.
+
 ## Features
 
 ### Data Browsing
@@ -48,7 +56,7 @@ A web application for browsing and visualizing economic data from the Federal Re
 
 ### Prerequisites
 
-1. **Node.js** (v18 or later)
+1. **Node.js** (20.19+ or 22.12+)
 2. **FRED API Key** -- Register for a free key at [fred.stlouisfed.org/docs/api/api_key.html](https://fred.stlouisfed.org/docs/api/api_key.html)
 3. **Ollama** -- For AI chart analysis, ensure an Ollama instance is accessible (configure `OLLAMA_BASE_URL` and `OLLAMA_MODEL` in `.env`)
 

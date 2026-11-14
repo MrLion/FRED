@@ -1,10 +1,10 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import { OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_API_KEY, ANALYZE_SYSTEM_PROMPT, NL_SEARCH_SYSTEM_PROMPT } from './api/shared/ai-config.js'
+import { ANALYZE_SYSTEM_PROMPT, NL_SEARCH_SYSTEM_PROMPT } from './api/shared/ai-config.js'
 
 function ollamaHeaders() {
   const h = { 'Content-Type': 'application/json' };
-  if (OLLAMA_API_KEY) h['Authorization'] = `Bearer ${OLLAMA_API_KEY}`;
+  if (process.env.OLLAMA_API_KEY) h['Authorization'] = `Bearer ${process.env.OLLAMA_API_KEY}`;
   return h;
 }
 
@@ -33,7 +33,7 @@ function analyzeApiPlugin() {
         }
         const { seriesId, seriesTitle, units, frequency, seasonalAdjustment, dataSummary } = parsed;
 
-        if (!OLLAMA_BASE_URL || !OLLAMA_MODEL) {
+        if (!process.env.OLLAMA_BASE_URL || !process.env.OLLAMA_MODEL) {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ error: 'Ollama is not configured on the server' }));
@@ -50,11 +50,11 @@ function analyzeApiPlugin() {
 
         try {
           const headers = ollamaHeaders();
-          const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+          const response = await fetch(`${process.env.OLLAMA_BASE_URL}/api/chat`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
-              model: OLLAMA_MODEL,
+              model: process.env.OLLAMA_MODEL,
               messages: [
                 { role: 'system', content: ANALYZE_SYSTEM_PROMPT },
                 { role: 'user', content: userMessage },
@@ -111,7 +111,7 @@ function nlSearchApiPlugin() {
         }
         const { query } = parsed;
 
-        if (!OLLAMA_BASE_URL || !OLLAMA_MODEL) {
+        if (!process.env.OLLAMA_BASE_URL || !process.env.OLLAMA_MODEL) {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ error: 'Ollama is not configured on the server' }));
@@ -126,11 +126,11 @@ function nlSearchApiPlugin() {
 
         try {
           const headers = ollamaHeaders();
-          const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+          const response = await fetch(`${process.env.OLLAMA_BASE_URL}/api/chat`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
-              model: OLLAMA_MODEL,
+              model: process.env.OLLAMA_MODEL,
               messages: [
                 { role: 'system', content: NL_SEARCH_SYSTEM_PROMPT },
                 { role: 'user', content: query },
@@ -224,7 +224,7 @@ function fredProxyApiPlugin() {
           res.statusCode = response.status;
           res.setHeader('Content-Type', 'application/json');
           res.end(data);
-        } catch (err) {
+        } catch {
           res.statusCode = 502;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ error: 'Failed to reach FRED API' }));

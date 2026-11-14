@@ -1,34 +1,18 @@
-import { NavLink } from 'react-router-dom';
-import { Home, LayoutGrid, Database, FileText } from 'lucide-react';
-
-const navItems = [
-  { to: '/', label: 'Home', icon: <Home size={22} /> },
-  { to: '/categories', label: 'Categories', icon: <LayoutGrid size={22} /> },
-  { to: '/sources', label: 'Sources', icon: <Database size={22} /> },
-  { to: '/releases', label: 'Releases', icon: <FileText size={22} /> },
+import { NavLink, useLocation } from 'react-router-dom';
+import { Home, Search, Database, FileText, Settings, ChartNoAxesColumnIncreasing } from 'lucide-react';
+const items = [
+  { to: '/', label: 'Overview', icon: Home },
+  { to: '/search', label: 'Explore', icon: Search },
+  { to: '/sources', label: 'Sources', icon: Database },
+  { to: '/releases', label: 'Releases', icon: FileText },
 ];
-
-export default function BottomNav({ open, onClose }) {
-  return (
-    <>
-      {/* Backdrop — desktop only, dismisses the drawer */}
-      <div className={`nav-backdrop ${open ? 'nav-backdrop-visible' : ''}`} onClick={onClose} />
-      <nav className={`bottom-nav ${open ? 'nav-open' : ''}`}>
-        {navItems.map(item => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
-            className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
-            onClick={onClose}
-          >
-            {item.icon}
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-    </>
-  );
+export default function BottomNav() {
+  const { pathname } = useLocation();
+  return <nav className="bottom-nav" aria-label="Main navigation">
+    <NavLink to="/" className="sidebar-brand"><ChartNoAxesColumnIncreasing size={25} /><span>FRED<span className="brand-caption">ECONOMIC DATA</span></span></NavLink>
+    <span className="nav-section-label">WORKSPACE</span>
+    {items.map(item => { const { to, label } = item; const Icon = item.icon; return <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `bottom-nav-item ${(isActive || (to === '/search' && pathname.startsWith('/categories')) || (to === '/releases' && pathname.startsWith('/release/'))) ? 'active' : ''}`}><Icon size={20} /><span>{label}</span></NavLink>; })}
+    <NavLink to="/settings" className="bottom-nav-item nav-settings"><Settings size={19} /><span>Settings</span></NavLink>
+    <p className="sidebar-footnote">A clearer view<br />of the economy.</p>
+  </nav>;
 }
-
-export { navItems };

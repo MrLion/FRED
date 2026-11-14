@@ -4,7 +4,7 @@ import { Sparkles, AlertTriangle, X, ChevronUp, ChevronDown } from 'lucide-react
 function computeDataSummary(observations) {
   if (!observations || observations.length === 0) return null;
 
-  const values = observations.map(o => ({ date: o.date, value: Number(o.value) })).filter(o => !isNaN(o.value));
+  const values = observations.filter(o => o.value !== '.').map(o => ({ date: o.date, value: Number(o.value) })).filter(o => Number.isFinite(o.value));
   if (values.length === 0) return null;
 
   const first = values[0];
@@ -125,7 +125,7 @@ export default function AiNarrator({ series, observations }) {
     return (
       <div className="ai-narrator-card">
         <div className="ai-narrator-card-header">
-          <Sparkles size={18} className="ai-narrator-icon" color="#0D9488" />
+          <Sparkles size={18} className="ai-narrator-icon" color="var(--accent)" />
           <span className="ai-narrator-card-title">Analyzing...</span>
         </div>
         <div className="ai-narrator-skeleton">
@@ -158,7 +158,7 @@ export default function AiNarrator({ series, observations }) {
   return (
     <div className="ai-narrator-card">
       <div className="ai-narrator-card-header">
-        <Sparkles size={18} className="ai-narrator-icon" color="#0D9488" />
+        <Sparkles size={18} className="ai-narrator-icon" color="var(--accent)" />
         <span className="ai-narrator-card-title">AI Analysis</span>
         <div className="ai-narrator-actions">
           <button
