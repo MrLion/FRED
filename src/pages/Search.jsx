@@ -1,8 +1,8 @@
+import { useAtlasSearchParams as useSearchParams } from '../features/atlas/AtlasNavigation';
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+
 import { searchSeries } from '../api/fred';
 import { interpretSearch, isQuestion, searchSuggestions, questionStartDate } from '../features/search/search';
-import { BrowseTabs } from '../features/browse/BrowseLayout';
 import SeriesCard from '../components/SeriesCard';
 import Loading, { ErrorMessage } from '../components/Loading';
 import { Sparkles, Search as SearchIcon, ArrowRight } from 'lucide-react';
@@ -72,7 +72,6 @@ export default function Search() {
   return (
     <div className="page search-page">
       <div className="page-intro"><span className="eyebrow">DISCOVER THE DATA</span><h1 className="page-title">{query ? 'Find the signal.' : 'What would you like to explore?'}</h1><p>Search an indicator, enter a series ID, or ask a question in plain English.</p></div>
-      <BrowseTabs />
       <form className="explore-search" onSubmit={event => { event.preventDefault(); const q = input.current.value.trim(); if (q) setParams({ q }); }}>
         <SearchIcon size={21} /><input ref={input} key={query} defaultValue={query} aria-label="Search economic data or ask a question" placeholder="How has inflation changed since 2020?" /><button type="submit" aria-label="Search"><ArrowRight size={20} /></button>
       </form>

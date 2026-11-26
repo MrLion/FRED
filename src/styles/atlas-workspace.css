@@ -1,0 +1,161 @@
+/* One cartographic shell and material palette for every route. */
+.economic-atlas {
+  --primary:#3264c8; --primary-light:#244d9e; --primary-bg:#eaf0f9;
+  --bg:#f3f0e5; --bg-white:#fffdf7; --text:#203752;
+  --text-secondary:#64736d; --text-muted:#6f7b70; --border:#deded0; --border-light:#ebe9de;
+  --font-display:'Plus Jakarta Sans',sans-serif; --accent:#7357bd; --accent-bg:#f1ecf8;
+}
+.atlas-header .header-search { flex:1; margin:0 auto; height:46px; max-width:580px; background:#fffdf7; border:1px solid #cbd0c9; border-radius:25px; min-width:0; }
+.atlas-header .search-input { font-size:12px; }
+.atlas-header .search-dropdown { z-index:20; background:var(--bg-white); }
+.atlas-header .search-dropdown-footer { background:var(--bg-white); font-size:11px; }
+.atlas-navigation { display:flex; gap:5px; align-items:center; min-height:45px; padding:0 28px; background:#f6f3e9; border-bottom:1px solid #d3d7c6; position:relative; z-index:4; overflow-x:auto; }
+.atlas-navigation a { text-decoration:none; color:#627467; font-size:11px; font-weight:600; padding:13px 17px; white-space:nowrap; border-bottom:2px solid transparent; }
+.atlas-navigation a.active { color:#254e77; border-bottom-color:#537a71; background:#edf0e5; }
+.atlas-navigation a:hover { background:#eceee2; }
+.economic-atlas .atlas-world { min-height:calc(100dvh - 137px); }
+.economic-atlas .atlas-map-area { min-height:calc(100dvh - 137px); }
+.economic-atlas .atlas-map { min-height:calc(100dvh - 137px); height:calc(100dvh - 137px); }
+.atlas-workspace { position:relative; z-index:4; margin:24px 24px 24px 26%; background:#faf7edf7; border:1px solid #d0d5c1; border-radius:16px; box-shadow:0 12px 45px #2e4c4926; max-height:calc(100dvh - 185px); overflow:auto; scrollbar-width:thin; scrollbar-color:#bdc5b4 transparent; }
+.atlas-workspace-bar { position:sticky; top:0; z-index:6; display:flex; align-items:center; gap:20px; padding:16px 25px; background:#f6f3e8f5; backdrop-filter:blur(12px); border-bottom:1px solid #dedfd0; }
+.atlas-workspace-bar>a { display:flex; gap:8px; align-items:center; color:#3f655b; text-decoration:none; font-size:11px; font-weight:650; white-space:nowrap; }
+.atlas-workspace-bar>span { margin-left:auto; color:#75816e; font-size:10px; }
+.atlas-workspace-bar .atlas-workspace-close { color:#5f7166; margin-left:0; padding:3px; }
+.atlas-workspace .page { max-width:1100px; padding:30px; margin:0 auto; width:100%; }
+.atlas-workspace .page-intro { margin-bottom:24px; }
+.atlas-workspace .page-intro h1,.atlas-workspace .page-title,.atlas-workspace .series-detail-title { font-size:clamp(24px,2.4vw,33px); letter-spacing:-.045em; }
+.atlas-workspace .eyebrow { color:#6c7a65; font-size:9px; letter-spacing:.18em; }
+.atlas-workspace .page-intro p { font-size:12px; line-height:1.8; max-width:650px; }
+.atlas-workspace .series-card,.atlas-workspace .directory-row,.atlas-workspace .source-panel,.atlas-workspace .source-toggle,.atlas-workspace .directory-filter,.atlas-workspace .explore-search,.atlas-workspace .settings-item,.atlas-workspace .home-section,.atlas-workspace .key-indicator-card,.atlas-workspace .recent-mini-card { background:#fffdf7; border-color:#deded0; box-shadow:none; }
+.atlas-workspace .series-card:hover,.atlas-workspace .directory-row:hover,.atlas-workspace .source-toggle:hover { background:#f0f2e8; border-color:#9caf9b; }
+.atlas-workspace .source-release-list .directory-row,.atlas-workspace .category-card { background:#f1f0e5; }
+.atlas-workspace .directory-icon { color:#5b7a60; background:#edf0df; }
+.atlas-workspace .series-card-id { color:#54746c; background:#eef1e5; }
+.atlas-workspace .series-card-title { font-size:14px; }
+.atlas-workspace .directory-row-copy strong { font-size:12px; }
+.atlas-workspace .browse-breadcrumbs { font-size:10px; margin-bottom:24px; }
+.atlas-workspace .browse-section-heading h2,.atlas-workspace .results-heading h2 { font-size:17px; }
+.atlas-workspace .browse-sort select,.atlas-workspace .btn-secondary,.atlas-workspace .range-btn { background:#fffdf7; border-color:#d2d8c5; color:#365a58; }
+.atlas-workspace .btn-secondary:hover { background:#edf0e3; border-color:#9fb197; }
+.atlas-workspace .range-btn.active { background:#e4eddf; border-color:#a8bd9f; color:#355b49; }
+.atlas-workspace .chart-container { background:#fffdf7; border-color:#dddccd; border-radius:12px; padding:15px; }
+.atlas-workspace .chart-source { color:#788270; letter-spacing:.04em; }
+.atlas-workspace .series-detail-header { margin-bottom:24px; }
+.atlas-workspace .series-detail-id { color:#5a7665; background:#e9eddd; }
+.atlas-workspace .series-detail-latest { background:#f2f1e5; border-color:#d9ddc8; padding:22px 24px; margin-bottom:24px; }
+.atlas-workspace .latest-value { font-size:42px; color:#2c5974; }
+.atlas-workspace .latest-units { font-size:11px; }
+.atlas-workspace .delta-chip { background:#e4eddf; color:#3f6554; }
+.atlas-workspace .latest-date { font-size:10px; }
+.atlas-workspace .series-meta,.atlas-workspace .series-notes { background:#fffdf7; border-color:#deded0; }
+.atlas-workspace .series-notes p { color:#657367; font-size:12px; line-height:1.9; }
+.atlas-workspace .series-notes h3 { font-size:14px; }
+.atlas-workspace .ai-narrator-btn,.atlas-workspace .ai-narrator-card,.atlas-workspace .ai-search-banner { background:#f2edf7; border-color:#dfd5ec; }
+.atlas-workspace .ai-narrator-btn { border-radius:9px; font-size:12px; }
+.atlas-workspace .ai-search-term { border-color:#ded4eb; background:#fcf9ff; color:#70569c; }
+.atlas-workspace .ai-narrator-text { font-size:12px; line-height:1.9; }
+.atlas-workspace .browse-callout { background:#ebefe0; border-color:#d1dac3; }
+.atlas-workspace .settings-list { background:#fffdf7; border:1px solid #deded0; border-radius:12px; overflow:hidden; }
+.atlas-workspace .settings-item { width:100%; border:0; padding:22px; color:#49664f; font-size:13px; }
+.atlas-workspace .settings-feedback { color:#4c715b; font-size:12px; margin-top:18px; }
+.atlas-workspace .key-indicators-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.atlas-workspace .ki-value { color:#2c5974; }
+.atlas-workspace .key-indicator-card:hover { border-color:#9caf9b; }
+.atlas-workspace .history-empty { min-height:180px; }
+.atlas-workspace .browse-tabs { border-color:#d5dac8; }
+.atlas-workspace .search-notice { background:#f4f1e3; border-color:#ddd9c2; }
+.has-workspace .atlas-map-area { position:absolute; inset:0; min-height:0; }
+.economic-atlas .has-workspace .atlas-map { width:26%; height:260px; min-height:0; position:absolute; top:285px; left:0; }
+.has-workspace .atlas-world-heading { left:25px; top:27px; }
+.has-workspace .atlas-world-heading h2 { font-size:22px; letter-spacing:-.045em; margin-top:10px; }
+.has-workspace .atlas-world-heading p { display:none; }
+.has-workspace .atlas-layer-toolbar { top:172px; left:24px; transform:none; width:calc(26% - 48px); max-width:280px; padding:12px; display:block; box-shadow:none; }
+.has-workspace .atlas-layer-toolbar>span { display:block; margin:0 0 8px 4px; }
+.has-workspace .atlas-layer-toolbar>div { display:grid; grid-template-columns:1fr 1fr; }
+.has-workspace .atlas-layer-toolbar button { font-size:10px; padding:9px 4px; }
+.has-workspace .atlas-region-picker { top:108px; right:auto; left:24px; width:calc(26% - 48px); max-width:280px; padding:9px; }
+.has-workspace .atlas-region-picker select { width:100%; min-width:0; }
+.has-workspace .atlas-legend { left:24px; width:calc(26% - 48px); max-width:280px; bottom:22px; padding:12px; box-shadow:none; }
+.has-workspace .atlas-color-key small { font-size:7px; letter-spacing:-.04em; }
+.has-workspace .atlas-hover { top:540px; left:13%; max-width:23%; width:max-content; }
+.has-workspace .atlas-map-hint,.has-workspace .atlas-attribution { display:none; }
+.has-workspace .atlas-zoom { left:24px; right:auto; bottom:auto; top:550px; }
+@media(max-height:850px) and (min-width:801px) { .has-workspace .atlas-legend { display:none; } .economic-atlas .has-workspace .atlas-map { top:285px; height:210px; } .has-workspace .atlas-zoom { top:500px; } .has-workspace .atlas-hover { top:460px; } }
+@media(max-width:1100px) and (min-width:801px) { .atlas-workspace { margin-left:240px; } .has-workspace .atlas-layer-toolbar,.has-workspace .atlas-region-picker,.has-workspace .atlas-legend { width:192px; } .economic-atlas .has-workspace .atlas-map { width:240px; } .has-workspace .atlas-hover { left:120px; } .atlas-workspace .page { padding:24px; } .atlas-workspace .topic-directory,.atlas-workspace .release-directory,.atlas-workspace .home-two-col { grid-template-columns:1fr; } }
+@media(max-width:800px) {
+  .atlas-header .header-search { order:3; flex-basis:100%; margin:0; height:39px; max-width:none; }
+  .atlas-navigation { padding:0 8px; min-height:42px; gap:0; }
+  .atlas-navigation a { padding:12px; font-size:10px; }
+  .economic-atlas .atlas-world { min-height:calc(100dvh - 158px); }
+  .economic-atlas .atlas-map-area { min-height:0; }
+  .economic-atlas .atlas-map { min-height:0; height:auto; }
+  .atlas-workspace { margin:16px 10px 28px; max-height:none; overflow:visible; border-radius:13px; }
+  .atlas-workspace-bar { padding:13px 16px; border-radius:13px 13px 0 0; position:relative; }
+  .atlas-workspace-bar>span { font-size:8px; }
+  .atlas-workspace .page { padding:22px 18px; }
+  .atlas-workspace .page-intro h1,.atlas-workspace .page-title,.atlas-workspace .series-detail-title { font-size:25px; }
+  .has-workspace .atlas-world-heading { display:none; }
+  .has-workspace .atlas-map-area { position:relative; height:150px; }
+  .economic-atlas .has-workspace .atlas-map { width:100%; height:150px; position:relative; top:auto; left:auto; aspect-ratio:auto; }
+  .has-workspace .atlas-layer-toolbar { display:none; }
+  .has-workspace .atlas-region-picker { position:relative; width:auto; max-width:none; top:auto; left:auto; margin:0 12px; }
+  .has-workspace .atlas-legend,.has-workspace .atlas-zoom,.has-workspace .atlas-hover { display:none; }
+  .atlas-workspace .topic-directory,.atlas-workspace .release-directory,.atlas-workspace .home-two-col { grid-template-columns:1fr; }
+  .atlas-workspace .chart-container { padding:8px 0; }
+  .atlas-workspace .series-card { padding:16px; }
+}
+
+.atlas-skip { position:fixed; top:8px; left:8px; transform:translateY(-180%); z-index:100; padding:12px 18px; border:2px solid #3264c8; background:#fffdf7; color:#203752; border-radius:8px; font-size:12px; text-decoration:none; }
+.atlas-skip:focus { transform:translateY(0); }
+.atlas-workspace-bar>span { max-width:55%; text-align:right; line-height:1.5; }
+
+/* Expanded view explains a place; thematic layers belong to the full map. */
+.economic-atlas .has-workspace .atlas-map { top:148px; height:180px; }
+.research-indicators { position:absolute; z-index:3; top:345px; left:24px; width:calc(26% - 48px); max-height:calc(100dvh - 510px); overflow:auto; scrollbar-width:thin; scrollbar-color:#aebda7 transparent; padding:0 2px 10px; }
+.research-indicator-heading { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-bottom:10px; }
+.research-indicator-heading>div>span { font-size:8px; font-weight:750; color:#657a68; letter-spacing:.13em; }
+.research-indicator-heading h3 { font-size:17px; letter-spacing:-.03em; margin-top:5px; }
+.research-indicator-heading button { border:0; background:transparent; padding:6px; color:#5d7966; display:flex; }
+.research-sidebar-help { color:#637b70; font-size:10px; line-height:1.7; margin-bottom:14px; }
+.research-indicator-list { display:flex; flex-direction:column; gap:9px; }
+.research-indicator { display:block; text-decoration:none; color:#203752; background:#faf8eef0; border:1px solid #ccd6c2; border-radius:10px; padding:12px 14px; transition:background .15s,border-color .15s; }
+.research-indicator.active { border-color:#86a3ba; background:#f1f5f5; box-shadow:inset 3px 0 #3868a6; }
+.research-indicator:hover { background:#fffdf5; border-color:#779a89; }
+.research-indicator-name { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:10px; font-weight:600; }
+.research-indicator-name svg { color:#5e7e72; flex-shrink:0; }
+.research-indicator strong { display:block; font-size:23px; letter-spacing:-.04em; color:#305e75; font-variant-numeric:tabular-nums; margin:5px 0 3px; }
+.research-indicator small { font-size:9px; color:#70816e; }
+.research-sidebar-tip { display:flex; gap:8px; margin-top:14px; font-size:9px; color:#557065; line-height:1.8; }
+.research-sidebar-tip>svg { flex-shrink:0; margin-top:3px; }
+.benchmark-controls { border:1px solid #d7ddcc; background:#f1f2e7; border-radius:10px; padding:15px 18px; display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between; margin:4px 0 16px; }
+.benchmark-controls>div { display:flex; align-items:center; gap:9px; color:#4b6a56; font-size:11px; }
+.benchmark-controls label { display:flex; align-items:center; gap:8px; font-size:11px; color:#3e5d50; cursor:pointer; }
+.benchmark-controls input { accent-color:#50765d; width:16px; height:16px; }
+.benchmark-controls button,.benchmark-notice button { border:1px solid #bdcdb7; background:#fffdf7; border-radius:6px; color:#466850; padding:8px 11px; font-size:10px; }
+.benchmark-controls .benchmark-level-link { border:0; background:transparent; text-decoration:underline; }
+.benchmark-notice { padding:12px 16px; background:#f6f3e5; border:1px solid #dedaca; border-radius:8px; font-size:11px; color:#6b735d; margin:12px 0; }
+.benchmark-notice button { margin-left:12px; }
+.benchmark-takeaway { border:1px solid #d5ddc9; border-left:3px solid #809b6d; border-radius:8px; padding:14px 17px; margin-bottom:17px; background:#edf2e5; }
+.benchmark-takeaway strong { display:block; font-size:13px; font-weight:650; color:#365442; }
+.benchmark-takeaway>span { display:block; margin-top:6px; font-size:10px; color:#65806b; }
+.benchmark-takeaway p { color:#74806b; font-size:10px; margin-top:5px; }
+.chart-comparison-legend { display:flex; flex-wrap:wrap; gap:20px; padding:8px 15px 4px; font-size:11px; color:#596a60; }
+.chart-comparison-legend>span { display:flex; align-items:center; gap:8px; }
+.chart-comparison-legend i { display:inline-block; width:23px; border-top:3px solid #365cf5; }
+.chart-comparison-legend>span:nth-child(2) i { border-top:3px dashed #927345; }
+@media(max-width:1100px) and (min-width:801px) { .research-indicators { width:192px; } }
+@media(max-width:800px) {
+  .economic-atlas .has-workspace .atlas-map { position:relative; top:auto; height:125px; }
+  .has-workspace .atlas-map-area { height:125px; }
+  .research-indicators { position:relative; top:auto; left:auto; width:auto; max-height:none; padding:0; margin:15px 12px 20px; }
+  .research-indicator-heading h3,.research-sidebar-help,.research-sidebar-tip { display:none; }
+  .research-indicator-heading { align-items:center; margin-bottom:6px; }
+  .research-indicator-list { display:grid; grid-template-columns:repeat(4,minmax(110px,1fr)); gap:8px; overflow-x:auto; padding-bottom:6px; }
+  .research-indicator { padding:10px; }
+  .research-indicator strong { font-size:20px; }
+  .research-indicator-name { font-size:9px; }
+  .benchmark-controls { padding:13px; gap:13px; }
+  .benchmark-takeaway strong { line-height:1.7; }
+}
+
+.chart-range-caption { font-size:9px; color:#7b846e; margin:-4px 0 15px; }

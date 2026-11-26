@@ -1,5 +1,6 @@
+import { AtlasLink as Link, useAtlasSearchParams as useSearchParams } from '../features/atlas/AtlasNavigation';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { getCategoryChildren, getCategorySeries, getCategory } from '../api/fred';
 import { useFred } from '../hooks/useFred';
 import { usePagedList } from '../features/browse/usePagedList';

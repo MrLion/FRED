@@ -1,5 +1,6 @@
+import { AtlasLink as Link, useAtlasSearchParams as useSearchParams } from '../features/atlas/AtlasNavigation';
 import { useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+
 import { getSources, getSourceReleases } from '../api/fred';
 import { useFred } from '../hooks/useFred';
 import BrowseLayout, { DirectoryFilter, DirectoryRow } from '../features/browse/BrowseLayout';

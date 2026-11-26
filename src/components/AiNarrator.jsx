@@ -57,7 +57,7 @@ function computeDataSummary(observations) {
 - Recent values: ${recent.map(r => `${r.value.toLocaleString()} (${r.date})`).join(', ')}`;
 }
 
-export default function AiNarrator({ series, observations }) {
+export default function AiNarrator({ series, observations, buttonLabel = 'Explain this chart' }) {
   const [narrative, setNarrative] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -115,7 +115,7 @@ export default function AiNarrator({ series, observations }) {
     return (
       <button className="ai-narrator-btn" onClick={handleAnalyze}>
         <Sparkles size={16} />
-        Explain this chart
+        {buttonLabel}
       </button>
     );
   }

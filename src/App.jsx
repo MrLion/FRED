@@ -1,8 +1,6 @@
 import { lazy, Suspense, useLayoutEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from 'react-router-dom';
 import { useHistory } from './hooks/useHistory';
-import Header from './components/Header';
-import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import Categories from './pages/Categories';
 import Sources from './pages/Sources';
@@ -10,13 +8,13 @@ import Releases from './pages/Releases';
 import Search from './pages/Search';
 import SeriesDetail from './pages/SeriesDetail';
 import Settings from './pages/Settings';
+import AtlasProvider from './features/atlas/AtlasContext';
 import './App.css';
 import './styles/modern.css';
 const Atlas = lazy(() => import('./pages/Atlas'));
 function AppFrame({ children }) {
   const { pathname } = useLocation();
-  if (pathname === '/') return <Suspense fallback={<div className="atlas-boot">Unfolding the Economic Atlas…</div>}><Atlas /></Suspense>;
-  return <div className="app"><Header /><main className="main-content">{children}</main><BottomNav /></div>;
+  return <Suspense fallback={<div className="atlas-boot">Unfolding the Economic Atlas…</div>}><Atlas>{pathname !== '/' ? children : null}</Atlas></Suspense>;
 }
 
 // One-time cleanup of legacy localStorage keys
@@ -43,6 +41,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <AtlasProvider>
       <ScrollRestoration />
       <AppFrame>
           <Routes>
@@ -55,8 +54,10 @@ export default function App() {
             <Route path="/search" element={<Search />} />
             <Route path="/series/:id" element={<SeriesDetail onView={addToHistory} />} />
             <Route path="/settings" element={<Settings clearHistory={clearHistory} />} />
+            <Route path="*" element={<div className="page"><h1>Place not found</h1><p>Return to the map to continue exploring.</p></div>} />
           </Routes>
       </AppFrame>
+      </AtlasProvider>
     </BrowserRouter>
   );
 }

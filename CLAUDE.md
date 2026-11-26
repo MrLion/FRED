@@ -65,7 +65,9 @@ Vercel with **Vite** framework preset. Required env vars in Vercel dashboard:
 ## File Conventions
 
 - Pages: `src/pages/`. Components: `src/components/`. Hooks: `src/hooks/`. API: `src/api/`.
-- One CSS file: `src/App.css`. Three breakpoints: mobile (<640px), tablet (640-1023px), desktop (1024px+).
+- Shared atlas shell: `src/pages/Atlas.jsx` wraps every route. No separate dashboard sidebar. Legacy component styles in `src/App.css` and `src/styles/modern.css` are themed by `src/styles/atlas.css` and `src/styles/atlas-workspace.css`.
+- Internal links and query updates use `src/features/atlas/AtlasNavigation.jsx` so region/layer context survives charts, search, browsing, range changes, and Back to map.
+- On desktop research opens beside a persistent mini-map; on mobile the map sits above stacked research panels.
 - Serverless functions: `api/` at project root. Shared config: `api/shared/`. Client API wrappers: `src/api/`.
 
 ## Testing

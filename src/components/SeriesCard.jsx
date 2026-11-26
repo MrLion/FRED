@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { AtlasLink as Link } from '../features/atlas/AtlasNavigation';
+
 import { ArrowUpRight } from 'lucide-react';
 
 export default function SeriesCard({ series, start }) {

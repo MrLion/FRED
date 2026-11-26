@@ -4,11 +4,12 @@ import { latestPoint, seriesId, observationsForLayer } from './data';
 const cache = new Map();
 const TTL = 30 * 60 * 1000;
 
-export function useMapValues(regions, layer, refresh) {
+export function useMapValues(regions, layer, refresh, enabled = true) {
   const [state, setState] = useState({ key: '', values: {}, completed: 0 });
   const previousRefresh = useRef(refresh);
   useEffect(() => {
     const controller = new AbortController();
+    if (!enabled) return () => controller.abort();
     if (previousRefresh.current !== refresh) {
       regions.forEach(region => cache.delete(seriesId(region.code, layer)));
       previousRefresh.current = refresh;
@@ -46,7 +47,7 @@ export function useMapValues(regions, layer, refresh) {
     }
     load();
     return () => controller.abort();
-  }, [regions, layer, refresh]);
+  }, [regions, layer, refresh, enabled]);
   return state.key === layer.id ? state : { values: {}, completed: 0 };
 }
 

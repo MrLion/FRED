@@ -1,13 +1,19 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, ChartNoAxesColumnIncreasing, Compass, ExternalLink, MapPinned, RefreshCw, Search, Settings, X } from 'lucide-react';
+import { useMemo, useRef, useLayoutEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { AtlasLink as Link, AtlasNavLink as NavLink } from '../features/atlas/AtlasNavigation';
+import { useAtlasContext } from '../features/atlas/AtlasContext';
+import Header from '../components/Header';
+import { ArrowLeft, ArrowRight, Compass, ExternalLink, MapPinned, RefreshCw, X } from 'lucide-react';
 import { useFred } from '../hooks/useFred';
 import AtlasMap from '../features/atlas/AtlasMap';
+import ResearchSidebar from '../features/atlas/ResearchSidebar';
+import { indicatorHref, isNationalResearch, isUnscopedResearch, regionalIndicator } from '../features/atlas/research';
 import { LAYERS, MAP_COLORS, REGIONS, formatMetric, seriesId } from '../features/atlas/data';
 import { useMapValues, useRegionDetails } from '../features/atlas/useAtlasData';
 import AiNarrator from '../components/AiNarrator';
 import { ErrorMessage } from '../components/Loading';
 import '../styles/atlas.css';
+import '../styles/atlas-workspace.css';
 
 const loadGeography = async signal => {
   const response = await fetch('/maps/us-states.json', {signal});
@@ -17,34 +23,45 @@ const loadGeography = async signal => {
 };
 const NO_REGIONS = [];
 
-export default function Atlas() {
+export default function Atlas({children}) {
+  const context=useAtlasContext();
+  const location=useLocation();
+  const workspace=useRef(null);
+  const researchQuery=new URLSearchParams(location.search).get('q');
+  useLayoutEffect(()=>{ if(workspace.current)workspace.current.scrollTop=0; },[location.pathname,researchQuery]);
   const navigate = useNavigate();
   const [params,setParams] = useSearchParams();
   const [refresh,setRefresh] = useState(0);
-  const search = useRef(null);
   const geography = useFred(loadGeography);
   const regions = geography.data || NO_REGIONS;
-  const layer = LAYERS.find(item=>item.id===params.get('layer')) || LAYERS[0];
-  const selected = regions.find(region=>region.code===params.get('state'));
-  const map = useMapValues(regions,layer,refresh);
-  const setSelection = useCallback(code=>{
-    const next=new URLSearchParams(params);if(code)next.set('state',code);else next.delete('state');setParams(next,{replace:true});
-  },[params,setParams]);
+  const layer = LAYERS.find(item=>item.id===context.layer) || LAYERS[0];
+  const nationalResearch=Boolean(children)&&isNationalResearch(location.pathname);
+  const referenceResearch=Boolean(children)&&isUnscopedResearch(location.pathname);
+  const selected = nationalResearch||referenceResearch?undefined:regions.find(region=>region.code===context.region);
+  const map = useMapValues(regions,layer,refresh,!children);
+  const setSelection = code=>{
+    const activeIndicator=regionalIndicator(/^\/series\/([^/]+)$/.exec(location.pathname)?.[1]);
+    if(children&&code&&activeIndicator){navigate(indicatorHref(code,activeIndicator.layer,location.search));return;}
+    const next=new URLSearchParams({layer:layer.id});
+    if(code)next.set('state',code);
+    navigate(`/?${next}`,{replace:!children});
+  };
   const available=Object.values(map.values).filter(Boolean).length;
   return <div className="economic-atlas">
-    <header className="atlas-header"><Link className="atlas-brand" to="/"><span className="atlas-wordmark">FRED</span><span className="atlas-brand-rule"/><span>ECONOMIC<br/>ATLAS</span></Link>
-      <form className="atlas-search" onSubmit={event=>{event.preventDefault();const query=search.current.value.trim();if(query)navigate(`/search?q=${encodeURIComponent(query)}`);}}><Search size={20}/><input ref={search} aria-label="Ask about a place or economic trend" placeholder="Ask about a place or economic trend…"/><button aria-label="Search economic data"><ArrowRight size={18}/></button></form>
-      <div className="atlas-header-actions"><Link to="/overview"><ChartNoAxesColumnIncreasing size={17}/><span>National overview</span></Link><Link to="/settings" aria-label="Settings"><Settings size={18}/></Link></div>
-    </header>
-    <main className={`atlas-world ${selected?'has-region':''}`}>
-      <div className="atlas-world-heading"><span>THE UNITED STATES</span><h1>A new perspective<br/>on the economy.</h1><p>Explore a place. Follow the numbers.</p></div>
-      <div className="atlas-layer-toolbar"><span>MAP LAYER</span><div role="group" aria-label="Economic map layer">{LAYERS.map(item=><button key={item.id} aria-pressed={item.id===layer.id} className={item.id===layer.id?'active':''} onClick={()=>{const next=new URLSearchParams(params);next.set('layer',item.id);setParams(next,{replace:true});}}>{item.label}</button>)}</div></div>
+    <a className="atlas-skip" href={children?'#atlas-research-content':'#atlas-world'}>Skip to content</a>
+    <Header/>
+    <nav className="atlas-navigation" aria-label="Atlas navigation">{[['/','Map'],['/overview','National indicators'],['/search','Search'],['/categories','Topics'],['/sources','Sources'],['/releases','Releases']].map(([to,label])=><NavLink key={to} to={to} end={to==='/'} className={({isActive})=>(isActive||(to==='/releases'&&location.pathname.startsWith('/release/')))?'active':''}>{label}</NavLink>)}</nav>
+    <main id="atlas-world" tabIndex={-1} className={`atlas-world ${selected?'has-region':''} ${children?'has-workspace':''}`}>
+      <div className="atlas-world-heading"><span>THE UNITED STATES</span>{!children&&<h1>A new perspective<br/>on the economy.</h1>}{children&&<h2>{selected?.name||(referenceResearch?'Research explorer':'United States')}</h2>}<p>Explore a place. Follow the numbers.</p></div>
+      {!children&&<div className="atlas-layer-toolbar"><span>MAP LAYER</span><div role="group" aria-label="Economic map layer">{LAYERS.map(item=><button key={item.id} aria-pressed={item.id===layer.id} className={item.id===layer.id?'active':''} onClick={()=>{const next=new URLSearchParams(params);next.set('layer',item.id);if(children&&context.region)next.set('region',context.region);setParams(next,{replace:true});}}>{item.label}</button>)}</div></div>}
       {geography.loading && <div className="atlas-loading" role="status"><Compass size={30}/><span>Unfolding the atlas…</span></div>}
       {geography.error && <div className="atlas-loading"><ErrorMessage message={geography.error} onRetry={geography.refetch}/></div>}
-      {geography.data && <AtlasMap regions={regions} selected={selected?.code} layer={layer} values={map.values} onSelect={setSelection}/>}
+      {geography.data && <AtlasMap contextOnly={Boolean(children)} keyboardEnabled={!children} regions={regions} selected={selected?.code} layer={layer} values={children?{}:map.values} onSelect={setSelection}/>}
       <div className="atlas-region-picker"><MapPinned size={17}/><select aria-label="Choose a state or district" value={selected?.code||''} onChange={event=>setSelection(event.target.value)}><option value="">Choose a state or district</option>{regions.map(region=><option key={region.code} value={region.code}>{region.name}</option>)}</select></div>
-      {selected ? <RegionPanel key={`${selected.code}:${layer.id}`} region={selected} layer={layer} onClose={()=>setSelection('')}/> : <aside className="atlas-welcome"><Compass size={28}/><span className="atlas-kicker">EVERY PLACE TELLS A STORY</span><h2>Discover the economy,<br/>state by state.</h2><p>Select a region to explore its jobs, income, housing, and growth.</p><button onClick={()=>setSelection('MA')}>Explore Massachusetts <ArrowRight size={16}/></button><Link to="/search">Or ask a question in plain English</Link></aside>}
-      <div className="atlas-legend"><div className="atlas-legend-title"><strong>{layer.title}</strong><button aria-label="Refresh map data" onClick={()=>setRefresh(n=>n+1)}><RefreshCw size={13}/></button></div><div className="atlas-color-key">{MAP_COLORS.map((color,index)=><div key={color}><span style={{background:color}}/><small>{layer.legend[index]}</small></div>)}</div><p>{layer.note}</p><p className="atlas-no-data-key">Uncolored regions: loading or unavailable</p><div className="atlas-map-status" role="status">{map.completed<regions.length?`Mapping regions · ${map.completed}/${regions.length}`:`${available} of ${regions.length} regions available`}<span>Latest available · dates vary by region</span></div></div>
+      {!children && (selected ? <RegionPanel key={`${selected.code}:${layer.id}`} region={selected} layer={layer} onClose={()=>setSelection('')}/> : <aside className="atlas-welcome"><Compass size={28}/><span className="atlas-kicker">EVERY PLACE TELLS A STORY</span><h2>Discover the economy,<br/>state by state.</h2><p>Select a region to explore its jobs, income, housing, and growth.</p><button onClick={()=>setSelection('MA')}>Explore Massachusetts <ArrowRight size={16}/></button><Link to="/search">Or ask a question in plain English</Link></aside>)}
+      {children&&geography.data&&<ResearchSidebar region={selected} reference={referenceResearch}/>}
+      {children&&<section id="atlas-research-content" tabIndex={-1} className="atlas-workspace" ref={workspace} aria-label="Atlas research panel"><div className="atlas-workspace-bar"><Link to="/"><ArrowLeft size={16}/>Back to map</Link><span>{selected?`Research · ${selected.name}`:referenceResearch?'Data explorer · US reference indicators':'National data explorer'}</span><Link className="atlas-workspace-close" to="/" aria-label="Close research panel"><X size={18}/></Link></div>{children}</section>}
+      {!children&&<div className="atlas-legend"><div className="atlas-legend-title"><strong>{layer.title}</strong><button aria-label="Refresh map data" onClick={()=>setRefresh(n=>n+1)}><RefreshCw size={13}/></button></div><div className="atlas-color-key">{MAP_COLORS.map((color,index)=><div key={color}><span style={{background:color}}/><small>{layer.legend[index]}</small></div>)}</div><p>{layer.note}</p><p className="atlas-no-data-key">Uncolored regions: loading or unavailable</p><div className="atlas-map-status" role="status">{map.completed<regions.length?`Mapping regions · ${map.completed}/${regions.length}`:`${available} of ${regions.length} regions available`}<span>Latest available · dates vary by region</span></div></div>}
       <div className="atlas-map-hint"><MapPinned size={15}/><span>Choose a state to explore · Drag to pan</span></div>
       <footer className="atlas-attribution"><a href="https://github.com/topojson/us-atlas" target="_blank" rel="noopener noreferrer">Census-derived boundaries</a><span>Data: FRED</span><span>Alaska & Hawaii shown as insets</span></footer>
     </main>
@@ -66,8 +83,8 @@ function RegionPanel({region,layer,onClose}) {
         <p className="atlas-observation-date">{data.latest?`Observation · ${data.latest.date}`:'No recent observations available'}</p>
         <p className="atlas-measurement">{layer.units} · {layer.frequency}</p>
         <MiniTrend points={chartPoints} title={`${layer.title} in ${region.name}`}/>
-        <Link className="atlas-open-chart" to={`/series/${id}`}>Open source chart <ExternalLink size={14}/></Link>
-        {layer.id==='growth' && <p className="atlas-growth-note">Source chart shows real GDP levels. This panel calculates annual growth.</p>}
+        <Link className="atlas-open-chart" to={indicatorHref(region.code,layer)}>Open source chart <ExternalLink size={14}/></Link>
+        {layer.id==='growth' && <p className="atlas-growth-note">Chart opens with annual GDP growth, matching this indicator.</p>}
       </>}
     </div>
     {!data.loading && analysisSeries && data.latest && <div className="atlas-ai"><AiNarrator key={`${id}:${data.latest.date}`} series={analysisSeries} observations={chartPoints}/></div>}

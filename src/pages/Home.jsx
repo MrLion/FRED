@@ -1,5 +1,6 @@
+import { AtlasLink as Link } from '../features/atlas/AtlasNavigation';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+
 import { getCategoryChildren, getSeriesObservations, getSeries } from '../api/fred';
 import { useFred } from '../hooks/useFred';
 import Chart from '../components/LazyChart';

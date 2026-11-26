@@ -1,13 +1,14 @@
+import { AtlasLink as Link, useAtlasNavigate as useNavigate } from '../features/atlas/AtlasNavigation';
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { searchSeries } from '../api/fred';
-import { Search, X, ArrowUpRight } from 'lucide-react';
+import { Search, X, ArrowUpRight, ChartNoAxesColumnIncreasing, Settings } from 'lucide-react';
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const committed = location.pathname === '/search' ? new URLSearchParams(location.search).get('q') || '' : '';
-  return <header className="header"><div className="header-inner"><Link className="header-logo" to="/">FRED</Link><SearchInput key={`${location.key}:${committed}`} initialQuery={committed} onNavigate={navigate} /><span className="header-caption">Economic data. In perspective.</span></div></header>;
+  return <header className="atlas-header"><Link className="atlas-brand" to="/"><span className="atlas-wordmark">FRED</span><span className="atlas-brand-rule"/><span>ECONOMIC<br/>ATLAS</span></Link><SearchInput key={`${location.pathname}:${committed}`} initialQuery={committed} onNavigate={navigate}/><div className="atlas-header-actions"><Link to="/overview"><ChartNoAxesColumnIncreasing size={17}/><span>National overview</span></Link><Link to="/settings" aria-label="Settings"><Settings size={18}/></Link></div></header>;
 }
 
 function SearchInput({ initialQuery, onNavigate }) {
@@ -36,7 +37,7 @@ function SearchInput({ initialQuery, onNavigate }) {
   const submit = event => { event.preventDefault(); if (query.trim()) { setOpen(false); onNavigate(`/search?q=${encodeURIComponent(query.trim())}`); } };
   return <form ref={form} className="header-search" onSubmit={submit} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
     <Search className="search-icon" size={18} />
-    <input ref={input} value={query} aria-label="Search economic data" role="combobox" aria-expanded={open && suggestions.length > 0} aria-controls="search-options" aria-autocomplete="list" aria-activedescendant={open && active >= 0 ? `search-option-${active}` : undefined} placeholder="Search data, series, or ask a question…" autoComplete="off" className="search-input"
+    <input ref={input} value={query} aria-label="Search economic data" role="combobox" aria-expanded={open && suggestions.length > 0} aria-controls="search-options" aria-autocomplete="list" aria-activedescendant={open && active >= 0 ? `search-option-${active}` : undefined} placeholder="Ask about a place or economic trend…" autoComplete="off" className="search-input"
       onFocus={() => setOpen(true)} onChange={event => { setQuery(event.target.value); setSuggestions([]); setActive(-1); setOpen(true); }}
       onKeyDown={event => {
         if (event.key === 'Escape') setOpen(false);
