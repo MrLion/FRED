@@ -1,84 +1,53 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# Repository guidance
 
 ## Commands
 
 ```bash
-npm run dev      # Vite dev server at localhost:5173
-npm run build    # Production build to dist/
-npm run lint     # ESLint
-npm run preview  # Preview production build
-npm test         # Run vitest test suite
+npm run dev        # Frontend and development API middleware at localhost:5173
+npm run build      # Production frontend in dist/
+npm run lint       # ESLint
+npm test           # Vitest
+npm run build:map  # Regenerate bundled state outlines
+npm run preview    # Built frontend only; no development API middleware
 ```
 
 ## Architecture
 
-React 19 SPA with Vercel serverless AI functions. No state management library — uses localStorage and custom hooks.
+React 19 SPA using React Router, custom hooks, and React context. `src/App.jsx` mounts `AtlasProvider` and the persistent `src/pages/Atlas.jsx` shell around every route. `/` is the full map; `/overview` is the national dashboard. Charts, search, browsing, settings, and unknown routes open in the atlas research panel.
 
-### Dual-Environment API Proxy
+- `src/features/atlas/`: state geometry rendering, region/layer context, regional data hooks, research indicators, and US comparisons.
+- `src/features/search/`: question detection, interpretation requests, deduplicated suggestions, and explicit start-year extraction.
+- `src/features/browse/`: shared browsing layouts and pagination.
+- `src/components/`: reusable header, charts, narrative, loading, and series components.
+- `src/api/fred.js`: FRED client, endpoint wrappers, and observation fetching.
+- `src/hooks/`: shared fetching and recently viewed history. History stores at most 20 entries in localStorage.
 
-All FRED API calls go through `/api/fred-proxy`, a serverless function that injects `FRED_API_KEY` from server-side environment variables. The API key never touches the browser — not in URLs, not in localStorage, not in network requests.
+Use `AtlasNavigation.jsx` link and navigation helpers for internal navigation so region/layer context survives browsing, chart controls, and Back to map. Do not introduce a separate page shell or revive the removed sidebar.
 
-- **Dev:** Custom Vite middleware plugin in `vite.config.js` intercepts GET requests to `/api/fred-proxy` and proxies to `api.stlouisfed.org`
-- **Production:** Vercel serverless function `api/fred-proxy.js` does the same
+## Server-side APIs and credentials
 
-AI endpoints (`/api/analyze`, `/api/nl-search`) follow the same dual-environment pattern:
+All browser FRED requests go through `/api/fred-proxy`. The server injects `FRED_API_KEY`; never put this credential in browser code or browser storage.
 
-- **Dev:** Custom Vite middleware plugins in `vite.config.js` intercept POST requests and proxy to Ollama
-- **Production:** Vercel serverless functions in `api/analyze.js` and `api/nl-search.js`
+- Development: `vite.config.js` provides FRED and chart-analysis middleware. Its search adapter invokes the production `api/nl-search.js` handler.
+- Production: Vercel runs `api/fred-proxy.js`, `api/analyze.js`, and `api/nl-search.js`.
+- `api/shared/ai-config.js` defines shared AI prompts and reads model/service configuration. Keep prompts shared rather than duplicating them.
+- `api/shared/search-interpretation.js` handles provider requests, output parsing, and validation. Structured output is requested only for supported services; cloud responses are prompted and validated.
 
-### Shared AI Config
+Environment variables: `FRED_API_KEY`; for AI, `OLLAMA_BASE_URL` and `OLLAMA_MODEL`; and `OLLAMA_API_KEY` when the service requires authentication. Keep these server-side, without `VITE_` prefixes. Do not commit `.env`. Restart development after changing environment variables.
 
-All AI configuration lives in `api/shared/ai-config.js` — single source of truth for:
-- `OLLAMA_BASE_URL` — Ollama API endpoint
-- `OLLAMA_MODEL` — model to use (e.g., `gemma4:31b-cloud`)
-- `ANALYZE_SYSTEM_PROMPT` — chart analysis system prompt
-- `NL_SEARCH_SYSTEM_PROMPT` — natural language search system prompt
+AI chart analysis receives a client-computed statistical summary. Plain-English search uses `isQuestion()` in `src/features/search/search.js`, then interprets questions into up to three terms. Suggestions are queried in parallel, deduplicated, and separated from keyword results. Keep cancellation signals connected through requests and retain keyword fallback when AI is unavailable. Explicit since/from years are carried into chart links.
 
-Both serverless functions and Vite middleware import from this shared file. **Never duplicate prompts or model strings.**
+## Economic data rules
 
-### Key Management
+- Map values load progressively, are paced, and use a 30-minute in-memory cache. Unfinished requests are cancelled when changing layers. Expanded research does not fetch all states in the background.
+- Show observation dates and units; latest dates may differ between regions. Unavailable data must not become invented values or zeros.
+- Income is current-dollar per-capita income. Housing is an index. Annual real GDP growth requires consecutive annual observations.
+- Regional US benchmarks must match frequency, seasonality, and units; GDP comparisons use annual growth. Compute takeaways from an exact shared observation date within the selected range.
+- Preserve missing observations as chart gaps. Range controls end at the latest valid observation, rather than today's date.
+- National charts use national context. Unmapped series use labeled US references rather than inheriting an unrelated state.
 
-- **FRED key:** Server-side only. `FRED_API_KEY` env var, injected by `api/fred-proxy.js`. No client-side key storage.
-- **Ollama key:** No key needed. `OLLAMA_BASE_URL` and `OLLAMA_MODEL` env vars configure the Ollama endpoint (server-side only).
+## Design and checks
 
-### Data Flow Patterns
+Read `DESIGN.md` before visual changes. Preserve the approved map-based experience unless the user requests a new direction. CSS is layered: `src/App.css` and `src/styles/modern.css` provide shared component styles; `src/styles/atlas.css` and `src/styles/atlas-workspace.css` apply the atlas treatment. These files remain active even where they contain legacy rules.
 
-- **`useFred` hook** (`src/hooks/useFred.js`): Generic async fetcher returning `{ data, loading, error, refetch }`. Used by all pages.
-- **`useHistory` hook** (`src/hooks/useHistory.js`): Tracks last 20 viewed series in localStorage with try-catch error handling.
-- **AI chart analysis**: Client computes a statistical summary of the data points locally, then sends only the summary (not raw data) to Ollama to minimize token usage.
-- **Natural language search**: `isNaturalLanguage()` heuristic in `Search.jsx` detects questions (question marks, question words, contractions, 6+ words). Ollama extracts 1-3 FRED search terms, which are queried in parallel and deduplicated.
-- **Search race condition fix**: `Search.jsx` uses `AbortController` to cancel stale requests when the query changes. `signal` threads through `nlSearch()` → `searchSeries()` → `fredFetch()` → `fetch()`.
-
-### AI Model
-
-Configured via `OLLAMA_MODEL` and `OLLAMA_BASE_URL` in `api/shared/ai-config.js`. Reads `OLLAMA_MODEL` and `OLLAMA_BASE_URL` env vars.
-
-## Deployment
-
-Vercel with **Vite** framework preset. Required env vars in Vercel dashboard:
-- `FRED_API_KEY` — FRED API key (required)
-- `OLLAMA_BASE_URL` — Ollama API endpoint (required for AI features)
-- `OLLAMA_MODEL` — model name to use (required for AI features, e.g., `gemma4:31b-cloud`)
-
-## File Conventions
-
-- Pages: `src/pages/`. Components: `src/components/`. Hooks: `src/hooks/`. API: `src/api/`.
-- Shared atlas shell: `src/pages/Atlas.jsx` wraps every route. No separate dashboard sidebar. Legacy component styles in `src/App.css` and `src/styles/modern.css` are themed by `src/styles/atlas.css` and `src/styles/atlas-workspace.css`.
-- Internal links and query updates use `src/features/atlas/AtlasNavigation.jsx` so region/layer context survives charts, search, browsing, range changes, and Back to map.
-- On desktop research opens beside a persistent mini-map; on mobile the map sits above stacked research panels.
-- Serverless functions: `api/` at project root. Shared config: `api/shared/`. Client API wrappers: `src/api/`.
-
-## Testing
-
-- Framework: Vitest
-- Tests: colocated in `__tests__/` directories next to source files
-- Run: `npm test`
-
-## Design System
-
-Always read DESIGN.md before making any visual or UI decisions.
-All font choices, colors, spacing, and aesthetic direction are defined there.
-Do not deviate without explicit user approval.
-In QA mode, flag any code that doesn't match DESIGN.md.
+Tests are colocated in `__tests__/` directories. Run meaningful checks for the change; verify visual changes at desktop and mobile sizes. Keep geometry and its upstream license together in `public/maps/`. No external map service is required.

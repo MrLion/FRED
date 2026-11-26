@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Maintenance
+- Removed unused starter assets: `src/assets/hero.png`, `src/assets/react.svg`, `src/assets/vite.svg`, and `public/icons.svg`.
+- Consolidated design guidance around the current atlas experience and corrected contributor instructions for AI authentication, search, navigation, and regional comparisons.
+
+## Economic Atlas update (2026-11-26)
+
+### Added
+- Interactive US economic map with state/DC selection, Alaska and Hawaii insets, and unemployment, income, housing, and annual real GDP growth layers.
+- Shared atlas shell for charts, search, browsing, overview, settings, and error pages, with regional context carried through navigation.
+- Expanded research indicator cards, compatible optional US benchmarks, and exact-date comparison takeaways.
+- Navy, ivory, and gold US-map favicon.
+
+### Changed
+- Map reset now clears selection and restores zoom/pan while retaining the active layer; Pacific Ocean label repositioned for visibility.
+- AI explanations are shown in expanded charts instead of the compact map card.
+- Plain-English search uses shared development/production interpretation handling with validated model responses and cloud-compatible requests.
+- AI uses Ollama configuration (`OLLAMA_BASE_URL`, `OLLAMA_MODEL`, and optional `OLLAMA_API_KEY`), replacing the historical Anthropic integration described below.
+- Chart histories preserve missing observations, support shareable ranges and explicit start years, and anchor ranges to the latest observation.
+- README refreshed for current features, setup, deployment, and repository structure.
+
+### Removed
+- CSV export, observation tables, separate sidebar/bottom navigation, and obsolete `docs/superpowers` planning documents.
+
+Earlier entries below describe historical releases; their providers, controls, and implementation details may have since been replaced.
+
 ## v2.0.0 - Architecture Pass (2026-03-26)
 
 ### Security
