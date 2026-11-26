@@ -4,7 +4,7 @@ A web application for browsing and visualizing economic data from the Federal Re
 
 ## Economic Atlas
 
-The home page is an interactive United States economic atlas. Select a state (or DC) on the map or in the state picker, then switch between unemployment, per-capita income, house-price indexes, and annual real GDP growth. The floating regional panel shows the observation date, a recent trend, a link to the source chart, and the existing AI explanation. The map reset button clears the selected region and resets zoom/pan while keeping the active economic layer.
+The home page is an interactive United States economic atlas. Select a state (or DC) on the map or in the state picker, then switch between unemployment, per-capita income, house-price indexes, and annual real GDP growth. The floating regional panel shows the observation date, a recent trend, and a link to the source chart. AI explanations are available in the expanded chart, not the compact map card. The map reset button clears the selected region and resets zoom/pan while keeping the active economic layer.
 
 The national dashboard remains at `/overview`. Charts, Search, Topics, Sources, Releases, Settings, and errors all open in a parchment research panel over the same persistent map, with one shared header/navigation and a Back to map action. State and layer context is retained across navigation and shareable links. Map selection and layer are shareable URL parameters, such as `/?state=MA&layer=income`.
 

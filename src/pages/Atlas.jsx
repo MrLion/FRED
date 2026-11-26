@@ -8,9 +8,8 @@ import { useFred } from '../hooks/useFred';
 import AtlasMap from '../features/atlas/AtlasMap';
 import ResearchSidebar from '../features/atlas/ResearchSidebar';
 import { indicatorHref, isNationalResearch, isUnscopedResearch, regionalIndicator } from '../features/atlas/research';
-import { LAYERS, MAP_COLORS, REGIONS, formatMetric, seriesId } from '../features/atlas/data';
+import { LAYERS, MAP_COLORS, REGIONS, formatMetric } from '../features/atlas/data';
 import { useMapValues, useRegionDetails } from '../features/atlas/useAtlasData';
-import AiNarrator from '../components/AiNarrator';
 import { ErrorMessage } from '../components/Loading';
 import '../styles/atlas.css';
 import '../styles/atlas-workspace.css';
@@ -71,8 +70,6 @@ function RegionPanel({region,layer,onClose}) {
   const [attempt,setAttempt]=useState(0);
   const data=useRegionDetails(region,layer,attempt);
   const chartPoints=useMemo(()=>data.points?.slice(-30)||[],[data.points]);
-  const id=seriesId(region.code,layer);
-  const analysisSeries=data.series?{...data.series,title:`${layer.title} in ${region.name}`,units:layer.units}:null;
   return <aside className="atlas-region-panel" aria-label={`${region.name} economic indicators`}>
     <div className="atlas-panel-breadcrumb"><span>United States <span>/</span> <strong>{region.name}</strong></span><button onClick={onClose} aria-label="Close region details"><X size={19}/></button></div>
     <span className="atlas-kicker">{region.name.toUpperCase()}</span><h2>A closer look<br/>at the economy.</h2>
@@ -86,7 +83,6 @@ function RegionPanel({region,layer,onClose}) {
         {layer.id==='growth' && <p className="atlas-growth-note">Chart opens with annual GDP growth, matching this indicator.</p>}
       </>}
     </div>
-    {!data.loading && analysisSeries && data.latest && <div className="atlas-ai"><AiNarrator key={`${id}:${data.latest.date}`} series={analysisSeries} observations={chartPoints}/></div>}
     <Link className="atlas-explore-region" to={`/search?q=${encodeURIComponent(`${region.name} economic indicators`)}`}><span>More data for {region.name}</span><ArrowRight size={17}/></Link>
     <p className="atlas-panel-source">{data.series?`${data.series.seasonal_adjustment} · ${data.series.id}`:'Federal Reserve Economic Data'}</p>
   </aside>;

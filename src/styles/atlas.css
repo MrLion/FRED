@@ -53,10 +53,6 @@
 .atlas-mini-trend { width:100%; display:block; margin:13px 0; }
 .atlas-mini-trend text { fill:#6c786e; font-size:10px; }
 .atlas-open-chart { display:flex; align-items:center; justify-content:center; gap:12px; background:#3168dc; padding:11px; color:white; text-decoration:none; border-radius:7px; font-size:11px; font-weight:650; }
-.atlas-ai { margin:15px 0; }
-.atlas-ai .ai-narrator-btn { font-size:11px; padding:13px 14px; background:#f2edf9; border-radius:8px; }
-.atlas-ai .ai-narrator-card { margin:0; padding:15px; }
-.atlas-ai .ai-narrator-text { font-size:11px; }
 .atlas-growth-note,.atlas-panel-source,.atlas-trend-empty { font-size:9px; color:#6d786d; line-height:1.8; margin-top:10px; }
 .atlas-explore-region { padding:14px 2px; display:flex; gap:12px; justify-content:space-between; align-items:center; color:var(--atlas-ink); text-decoration:none; font-size:11px; border-top:1px solid #e0dfd1; }
 .atlas-value-loading { min-height:240px; display:grid; place-items:center; color:#6b7a6b; font-size:11px; }

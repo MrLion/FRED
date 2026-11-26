@@ -5,7 +5,7 @@ The homepage is now a map-first Economic Atlas, following the user's approved Ci
 - Full-width US state map, warm ivory controls, blue water, muted sage terrain, subtle hex grid, original decorative mountains and forest patterns.
 - Accurate Census-derived state outlines, including DC and Alaska/Hawaii insets; terrain decoration carries no data meaning.
 - Live economic layer colors; no invented values. Missing/unloaded states remain uncolored. Legends state units and that observation dates vary.
-- Floating regional panel with observation date, recent time-scaled trend, source-chart link, and the existing optional AI explanation.
+- Floating regional panel with observation date, recent time-scaled trend, source-chart link. AI explanations belong in the expanded chart, not the compact map card.
 - Unemployment, income per person, housing index, and annual real GDP growth layers. Explicit units; GDP growth is derived from consecutive annual values.
 - Expanded research uses a location-only minimap and four dated indicator cards that control the main chart, replacing map-layer buttons. Matching US benchmarks are shown as a dashed second line, with deterministic same-period takeaways. National series use national context.
 - Charts, search, national indicators, topics, sources, releases, settings, and error pages open as research panels over the persistent map. The old sidebar is removed. Region/layer context travels through links and chart ranges, and Back to map restores selection.
