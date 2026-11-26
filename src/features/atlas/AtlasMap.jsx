@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Plus, Minus, RotateCcw } from 'lucide-react';
 import { formatMetric, mapColor } from './data';
-export default function AtlasMap({regions,selected,layer,values,onSelect,keyboardEnabled=true,contextOnly=false}) {
+export default function AtlasMap({regions,selected,layer,values,onSelect,onReset,keyboardEnabled=true,contextOnly=false}) {
   const [zoom,setZoom] = useState(1);
   const [offset,setOffset] = useState({x:0,y:0});
   const [hover,setHover] = useState(null);
@@ -54,6 +54,6 @@ export default function AtlasMap({regions,selected,layer,values,onSelect,keyboar
       </g>
     </svg>
     {hover && <div className="atlas-hover" role="status"><strong>{hover.name}</strong><span>{values[hover.code]?`${formatMetric(Number(values[hover.code].value),layer)} · ${values[hover.code].date}`:'Select to explore'}</span></div>}
-    {!contextOnly&&<div className="atlas-zoom" aria-label="Map controls"><button aria-label="Zoom in" disabled={zoom>=3} onClick={()=>setZoom(z=>Math.min(3,z+.4))}><Plus size={18}/></button><button aria-label="Zoom out" disabled={zoom<=1} onClick={()=>{setZoom(z=>Math.max(1,z-.4));if(zoom<=1.4)setOffset({x:0,y:0});}}><Minus size={18}/></button><button aria-label="Reset map view" onClick={()=>{setZoom(1);setOffset({x:0,y:0});}}><RotateCcw size={16}/></button></div>}
+    {!contextOnly&&<div className="atlas-zoom" aria-label="Map controls"><button aria-label="Zoom in" disabled={zoom>=3} onClick={()=>setZoom(z=>Math.min(3,z+.4))}><Plus size={18}/></button><button aria-label="Zoom out" disabled={zoom<=1} onClick={()=>{setZoom(z=>Math.max(1,z-.4));if(zoom<=1.4)setOffset({x:0,y:0});}}><Minus size={18}/></button><button aria-label="Reset map selection and view" title="Clear selection and show the full map" onClick={()=>{setZoom(1);setOffset({x:0,y:0});setHover(null);onReset?.();}}><RotateCcw size={16}/></button></div>}
   </div>;
 }

@@ -1,19 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getSeries, getSeriesObservations } from '../../api/fred';
 import { latestPoint, seriesId, observationsForLayer } from './data';
 const cache = new Map();
 const TTL = 30 * 60 * 1000;
 
-export function useMapValues(regions, layer, refresh, enabled = true) {
+export function useMapValues(regions, layer, enabled = true) {
   const [state, setState] = useState({ key: '', values: {}, completed: 0 });
-  const previousRefresh = useRef(refresh);
   useEffect(() => {
     const controller = new AbortController();
     if (!enabled) return () => controller.abort();
-    if (previousRefresh.current !== refresh) {
-      regions.forEach(region => cache.delete(seriesId(region.code, layer)));
-      previousRefresh.current = refresh;
-    }
     async function load() {
       const values = {};
       let completed = 0;
@@ -47,7 +42,7 @@ export function useMapValues(regions, layer, refresh, enabled = true) {
     }
     load();
     return () => controller.abort();
-  }, [regions, layer, refresh, enabled]);
+  }, [regions, layer, enabled]);
   return state.key === layer.id ? state : { values: {}, completed: 0 };
 }
 
