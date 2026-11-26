@@ -176,3 +176,7 @@
 .home-page .snapshot-trend .indicator-sparkline {height:112px;width:100%;margin:12px 0 0;color:#3264c8}
 .snapshot-trend-dates {display:flex;justify-content:space-between;color:#738076;font-size:9px;margin:0 0 2px}
 @media(max-width:640px){.home-page .key-indicators-grid{grid-template-columns:1fr}.home-page .key-indicator-card{padding:15px}.snapshot-value-row .ki-value{font-size:28px}.home-page .snapshot-trend .indicator-sparkline{height:100px}}
+
+.snapshot-card-link {display:block;text-decoration:none;color:inherit}
+.snapshot-recovery {display:flex;align-items:center;gap:12px;font-size:11px;color:#6d7469;margin-top:10px}
+.snapshot-recovery .text-action {margin:0;padding:3px 0;font-size:11px}

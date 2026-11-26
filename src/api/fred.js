@@ -9,11 +9,17 @@ async function fredFetch(endpoint, params = {}, signal) {
 
   const res = await fetch(`/api/fred-proxy?${searchParams.toString()}`, { signal });
   if (!res.ok) {
-    if (res.status === 400) {
-      const data = await res.json().catch(() => null);
-      throw new Error(data?.error_message || data?.error || 'Bad request');
+    let data = null;
+    try { data = await res.json(); } catch { /* The server may return a non-JSON error. */ }
+    const error = new Error(data?.error_message || data?.error || `FRED API error: ${res.status}`);
+    error.status = res.status;
+    const hint = res.headers?.get?.('Retry-After');
+    if (hint) {
+      const seconds = Number(hint);
+      const ms = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(hint) - Date.now();
+      if (Number.isFinite(ms)) error.retryAfterMs = Math.max(0, ms);
     }
-    throw new Error(`FRED API error: ${res.status}`);
+    throw error;
   }
   return res.json();
 }

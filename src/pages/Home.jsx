@@ -1,76 +1,35 @@
 import { AtlasLink as Link } from '../features/atlas/AtlasNavigation';
 import { useState, useEffect } from 'react';
 
-import { getSeriesObservations, getSeries } from '../api/fred';
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 
-import { SNAPSHOT, snapshotData, snapshotValue, snapshotChange, observationLabel } from '../features/overview/snapshot';
+import { SNAPSHOT, snapshotValue, snapshotChange, observationLabel } from '../features/overview/snapshot';
+
+import { readSnapshot, loadSnapshot } from '../features/overview/loadSnapshot';
 
 const KEY_INDICATOR_IDS = ['GDP', 'UNRATE', 'CPIAUCSL', 'FEDFUNDS'];
 const INDICATOR_NAMES = Object.fromEntries(Object.entries(SNAPSHOT).map(([id,details])=>[id,details.name]));
-const INDICATORS_CACHE_KEY = 'fred_indicators_cache_v4';
-const INDICATORS_TTL = 5 * 60 * 1000;
-
-function readIndicatorsCache() {
-  try {
-    const raw = localStorage.getItem(INDICATORS_CACHE_KEY);
-    if (!raw) return null;
-    const cached = JSON.parse(raw);
-    if (!Array.isArray(cached.indicators) || Date.now() - cached.updatedAt > INDICATORS_TTL) return null;
-    return cached.indicators;
-  } catch {
-    return null;
-  }
-}
-
-function writeIndicatorsCache(indicators) {
-  if (indicators.some(ind => ind.value == null)) return; // don't cache partial results
-  try {
-    localStorage.setItem(INDICATORS_CACHE_KEY, JSON.stringify({ indicators, updatedAt: Date.now() }));
-  } catch {
-    // quota exceeded — skip silently
-  }
-}
-
 function useKeyIndicators() {
-  const [indicators, setIndicators] = useState(() =>
-    readIndicatorsCache() ||
-    KEY_INDICATOR_IDS.map(id => ({ id, name: null, value: null, delta: null, date: null, loading: true }))
-  );
-
-  useEffect(() => {
-    if (readIndicatorsCache()) return;
-
-    let cancelled = false;
-
-    async function fetchAll() {
-      const results = await Promise.allSettled(
-        KEY_INDICATOR_IDS.map(async (id) => {
-          const [info, obs] = await Promise.all([
-            getSeries(id),
-            getSeriesObservations(id, { limit: 90, sort_order: 'desc' }),
-          ]);
-          return snapshotData(id,info,obs);
-        })
-      );
-
-      if (cancelled) return;
-
-      const next = results.map((result, i) =>
-        result.status === 'fulfilled'
-          ? result.value
-          : { id: KEY_INDICATOR_IDS[i], name: KEY_INDICATOR_IDS[i], value: null, delta: null, date: null, loading: false }
-      );
-
-      setIndicators(next);
-      writeIndicatorsCache(next);
-    }
-
-    fetchAll();
-    return () => { cancelled = true; };
-  }, []);
-
-  return indicators;
+  const [indicators,setIndicators]=useState(()=>KEY_INDICATOR_IDS.map(id=>readSnapshot(id)||{id,name:INDICATOR_NAMES[id],value:null,loading:true}));
+  const [retries,setRetries]=useState({});
+  useEffect(()=>{
+    let cancelled=false;
+    KEY_INDICATOR_IDS.forEach(id=>{
+      const cached=readSnapshot(id);
+      if(cached&&!cached.stale&&!retries[id])return;
+      loadSnapshot(id).then(data=>{
+        if(!cancelled)setIndicators(items=>items.map(item=>item.id===id?{...data,error:false}:item));
+      }).catch(()=>{
+        if(!cancelled)setIndicators(items=>items.map(item=>item.id===id?{...item,name:INDICATOR_NAMES[id],loading:false,error:true}:item));
+      });
+    });
+    return ()=>{cancelled=true;};
+  },[retries]);
+  const retry=id=>{
+    setIndicators(items=>items.map(item=>item.id===id?{...item,error:false,loading:true}:item));
+    setRetries(previous=>({...previous,[id]:(previous[id]||0)+1}));
+  };
+  return {indicators,retry};
 }
 
 function Sparkline({ points, title }) {
@@ -112,7 +71,7 @@ function timeAgo(ts) {
 
 export default function Home({ recentlyViewed, clearHistory }) {
   const [showAllRecent, setShowAllRecent] = useState(false);
-  const indicators = useKeyIndicators();
+  const {indicators,retry} = useKeyIndicators();
 
   return (
     <div className="page home-page">
@@ -122,9 +81,9 @@ export default function Home({ recentlyViewed, clearHistory }) {
       <div className="key-indicators-label">National snapshot</div>
       <div className="key-indicators-grid">
         {indicators.map(ind => (
-          <Link key={ind.id} className="key-indicator-card" to={`/series/${ind.id}`}>
+          <div key={ind.id} className="key-indicator-card"><Link className="snapshot-card-link" to={`/series/${ind.id}`}>
             <div className="snapshot-card-heading"><div className="ki-name">{ind.name || INDICATOR_NAMES[ind.id]}</div>{ind.date&&<span className="ki-date">{observationLabel(ind.date,ind.id)}</span>}</div>
-            <div className="snapshot-value-row"><div className="ki-value">{ind.loading ? '…' : ind.value != null ? snapshotValue(ind.value,ind.id) : '—'}</div>
+            <div className="snapshot-value-row"><div className="ki-value">{ind.value != null ? snapshotValue(ind.value,ind.id) : ind.loading ? '…' : 'Unavailable'}</div>
               {ind.delta != null && <span className={`delta-chip ${ind.delta>0?'delta-positive':ind.delta<0?'delta-negative':'delta-na'}`} title={`${snapshotChange(ind.delta,ind.id)} versus ${observationLabel(ind.priorDate,ind.id)}`}>
                 {ind.delta>0?<TrendingUp size={13}/>:ind.delta<0?<TrendingDown size={13}/>:null}
                 {snapshotChange(ind.delta,ind.id).replace(' percentage points',' pp')}
@@ -134,7 +93,7 @@ export default function Home({ recentlyViewed, clearHistory }) {
             <div className="ki-units" title={`${SNAPSHOT[ind.id].note} ${ind.seasonalAdjustment||''}`}>{SNAPSHOT[ind.id].units}</div>
             <Sparkline points={ind.points} title={INDICATOR_NAMES[ind.id]}/>
 
-          </Link>
+          </Link>{ind.error&&<div className="snapshot-recovery"><span>{ind.value!=null?'Could not refresh':'Temporarily unavailable'}</span><button className="text-action" aria-label={`Retry ${INDICATOR_NAMES[ind.id]}`} onClick={()=>retry(ind.id)}>Retry</button></div>}</div>
         ))}
       </div>
 
