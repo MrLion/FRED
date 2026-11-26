@@ -1,0 +1,10 @@
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { feature } from 'topojson-client';
+import { geoPath } from 'd3-geo';
+const topology = JSON.parse(await readFile(new URL('../node_modules/us-atlas/states-albers-10m.json', import.meta.url)));
+const path = geoPath().digits(2);
+const states = feature(topology, topology.objects.states).features.filter(state => +state.id <= 56);
+await mkdir(new URL('../public/maps/', import.meta.url), { recursive: true });
+await writeFile(new URL('../public/maps/us-states.json', import.meta.url), JSON.stringify(states.map(state => ({ id: state.id.padStart(2, '0'), name: state.properties.name, path: path(state), center: path.centroid(state) }))));
+await writeFile(new URL('../public/maps/LICENSE-us-atlas.txt', import.meta.url), await readFile(new URL('../node_modules/us-atlas/LICENSE', import.meta.url)));
+console.log(`Generated ${states.length} Census-derived state outlines, including DC.`);

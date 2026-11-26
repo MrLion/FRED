@@ -38,8 +38,8 @@ export async function getCategorySeries(categoryId, opts = {}) {
   return { series: extractSeries(data), count: data.count || 0 };
 }
 
-export async function getSeries(seriesId) {
-  const data = await fredFetch('series', { series_id: seriesId });
+export async function getSeries(seriesId, signal) {
+  const data = await fredFetch('series', { series_id: seriesId }, signal);
   return extractSeries(data)[0] || null;
 }
 

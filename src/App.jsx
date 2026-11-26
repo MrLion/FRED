@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { lazy, Suspense, useLayoutEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from 'react-router-dom';
 import { useHistory } from './hooks/useHistory';
 import Header from './components/Header';
@@ -12,6 +12,12 @@ import SeriesDetail from './pages/SeriesDetail';
 import Settings from './pages/Settings';
 import './App.css';
 import './styles/modern.css';
+const Atlas = lazy(() => import('./pages/Atlas'));
+function AppFrame({ children }) {
+  const { pathname } = useLocation();
+  if (pathname === '/') return <Suspense fallback={<div className="atlas-boot">Unfolding the Economic Atlas…</div>}><Atlas /></Suspense>;
+  return <div className="app"><Header /><main className="main-content">{children}</main><BottomNav /></div>;
+}
 
 // One-time cleanup of legacy localStorage keys
 try { localStorage.removeItem('fred_api_key'); } catch { /* ignore */ }
@@ -38,11 +44,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollRestoration />
-      <div className="app">
-        <Header />
-        <main className="main-content">
+      <AppFrame>
           <Routes>
-            <Route path="/" element={<Home recentlyViewed={recentlyViewed} clearHistory={clearHistory} />} />
+            <Route path="/overview" element={<Home recentlyViewed={recentlyViewed} clearHistory={clearHistory} />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/categories/:id" element={<Categories />} />
             <Route path="/sources" element={<Sources />} />
@@ -52,9 +56,7 @@ export default function App() {
             <Route path="/series/:id" element={<SeriesDetail onView={addToHistory} />} />
             <Route path="/settings" element={<Settings clearHistory={clearHistory} />} />
           </Routes>
-        </main>
-        <BottomNav />
-      </div>
+      </AppFrame>
     </BrowserRouter>
   );
 }

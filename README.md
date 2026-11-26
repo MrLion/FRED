@@ -2,6 +2,16 @@
 
 A web application for browsing and visualizing economic data from the Federal Reserve Bank of St. Louis (FRED). Built as a web-based alternative to the official FRED mobile app, with full support for smartphones, tablets, and desktops.
 
+## Economic Atlas
+
+The home page is an interactive United States economic atlas. Select a state (or DC) on the map or in the state picker, then switch between unemployment, per-capita income, house-price indexes, and annual real GDP growth. The floating regional panel shows the observation date, a recent trend, a link to the source chart, and the existing AI explanation.
+
+The previous dashboard remains at `/overview`. Search, Topics, Sources, Releases, and all series links remain available. Map selection and layer are shareable URL parameters, such as `/?state=MA&layer=income`.
+
+Map data loads progressively and is cached in memory for 30 minutes. Requests are paced; switching layers cancels unfinished requests. The map uses the latest available observation for each region, so dates can differ. Uncolored regions are still loading or unavailable. Income is in current dollars; housing is an index, not a dollar price; GDP growth is calculated only between consecutive annual observations.
+
+State outlines are generated from Census-derived [us-atlas](https://github.com/topojson/us-atlas) geometry, with Alaska and Hawaii insets. Geometry is bundled locally; no third-party map service or map key is needed. To regenerate it: `npm run build:map`. The upstream license is included in `public/maps/LICENSE-us-atlas.txt`.
+
 ## Design refresh
 
 The approved Slate & Electric Blue refresh is implemented for the responsive shell, overview, search results, series detail, and topic/source/release browsing. Plain-English search still uses the configured Ollama service. If AI is unavailable, keyword search remains available and a clear notice appears.

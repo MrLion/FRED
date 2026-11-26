@@ -4,7 +4,7 @@ import { ChevronRight, Search, X, ArrowUpRight } from 'lucide-react';
 export default function BrowseLayout({ title, description, section, breadcrumbs = [], children }) {
   return <div className="page browse-page">
     <nav className="browse-breadcrumbs" aria-label="Breadcrumb">
-      <Link to="/">Overview</Link><ChevronRight size={12} /><Link to="/search">Explore</Link>
+      <Link to="/overview">Overview</Link><ChevronRight size={12} /><Link to="/search">Explore</Link>
       {breadcrumbs.map((crumb, index) => <span key={`${crumb.label}:${index}`}><ChevronRight size={12} />{crumb.to ? <Link to={crumb.to}>{crumb.label}</Link> : <span aria-current="page">{crumb.label}</span>}</span>)}
     </nav>
     <div className="page-intro"><span className="eyebrow">{section || 'EXPLORE THE ECONOMY'}</span><h1 className="page-title">{title}</h1><p>{description}</p></div>

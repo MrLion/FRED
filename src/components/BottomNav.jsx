@@ -1,7 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Search, Database, FileText, Settings, ChartNoAxesColumnIncreasing } from 'lucide-react';
+import { Map, Home, Search, Database, FileText, Settings, ChartNoAxesColumnIncreasing } from 'lucide-react';
 const items = [
-  { to: '/', label: 'Overview', icon: Home },
+  { to: '/', label: 'Atlas', icon: Map },
+  { to: '/overview', label: 'Overview', icon: Home },
   { to: '/search', label: 'Explore', icon: Search },
   { to: '/sources', label: 'Sources', icon: Database },
   { to: '/releases', label: 'Releases', icon: FileText },

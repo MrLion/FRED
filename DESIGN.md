@@ -1,3 +1,17 @@
+# Economic Atlas — approved November 26, 2026
+
+The homepage is now a map-first Economic Atlas, following the user's approved Civilization-inspired concept. This supersedes the dashboard homepage direction below; existing data pages retain their current blue-and-slate styling.
+
+- Full-width US state map, warm ivory controls, blue water, muted sage terrain, subtle hex grid, original decorative mountains and forest patterns.
+- Accurate Census-derived state outlines, including DC and Alaska/Hawaii insets; terrain decoration carries no data meaning.
+- Live economic layer colors; no invented values. Missing/unloaded states remain uncolored. Legends state units and that observation dates vary.
+- Floating regional panel with observation date, recent time-scaled trend, source-chart link, and the existing optional AI explanation.
+- Unemployment, income per person, housing index, and annual real GDP growth layers. Explicit units; GDP growth is derived from consecutive annual values.
+- Search remains prominent. National overview is preserved at `/overview`. No CSV export, observation tables, or nonfunctional county controls.
+- Mouse and keyboard state selection, state dropdown for small regions, map zoom/pan/reset, responsive stacked panels on phones.
+
+---
+
 # Approved design update — November 13, 2026
 
 The user approved the Slate & Electric Blue preview for Overview, Search, and Series Detail. This update supersedes conflicting visual rules below; the older specification is retained for context.
