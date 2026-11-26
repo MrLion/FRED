@@ -67,7 +67,7 @@ export async function interpretQuestion(query, { baseUrl, model, apiKey }) {
       { role: 'system', content: NL_SEARCH_SYSTEM_PROMPT },
       { role: 'user', content: `${query}\n\nReturn only the JSON object with searchTerms and explanation. Do not include reasoning or markdown.` },
     ],
-    options: { temperature: 0 },
+    options: { temperature: 0, num_predict: 512 },
     stream: false,
   };
   // Ollama Cloud does not support the format parameter; prompt + validate there.

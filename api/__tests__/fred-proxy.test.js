@@ -1,3 +1,4 @@
+import { clearLocalRateLimits } from '../shared/rate-limit.js';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import handler from '../fred-proxy.js';
 
@@ -22,6 +23,7 @@ describe('fred-proxy handler', () => {
   let originalKey;
 
   beforeEach(() => {
+    clearLocalRateLimits();
     originalKey = process.env.FRED_API_KEY;
     process.env.FRED_API_KEY = 'test-key-123';
   });

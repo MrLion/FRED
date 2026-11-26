@@ -1,9 +1,11 @@
+import { clearLocalRateLimits } from '../shared/rate-limit.js';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import handler from '../nl-search.js';
 function response() {
   return { status: vi.fn(function (status) { this.statusCode = status; return this; }), json: vi.fn() };
 }
 beforeEach(() => {
+  clearLocalRateLimits();
   vi.stubEnv('OLLAMA_BASE_URL', 'https://ollama.com');
   vi.stubEnv('OLLAMA_MODEL', 'test-cloud');
 });

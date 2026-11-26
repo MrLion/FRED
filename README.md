@@ -134,3 +134,20 @@ State boundaries come from Census-derived [us-atlas](https://github.com/topojson
 ## License
 
 [MIT](LICENSE)
+
+## Public API protection
+
+The FRED proxy accepts only the 11 endpoint paths and endpoint-specific parameters used by the app. Client-supplied API keys, output formats, duplicate parameters, unknown paths, and oversized pagination requests are rejected before reaching FRED. AI search and analysis share a request budget, enforce bounded inputs, and have provider timeouts; chart analysis also caps generated output.
+
+Default limits:
+
+| Provider group | Requests per client/minute | Deployment requests/minute | Deployment requests/24-hour window |
+| --- | --- | --- | --- |
+| FRED | 90 | 100 | 20,000 |
+| AI (search + analysis combined) | 6 | 20 | 500 |
+
+Configure `RATE_LIMIT_REDIS_REST_URL` and `RATE_LIMIT_REDIS_REST_TOKEN` using a shared Redis REST service (such as Upstash). Counters are checked and incremented atomically across serverless instances. Set `REQUIRE_SHARED_RATE_LIMIT=true` in production to prevent a missing configuration from silently weakening protection. With this flag, missing Redis credentials return 503; a configured limiter outage also returns 503 without calling FRED or Ollama. Exhausted limits return 429 with `Retry-After`.
+
+Without Redis and without that flag, a bounded in-memory fallback provides **per-process protection only**. It resets on cold starts and is not a deployment-wide quota guarantee. Limits are configurable through the `FRED_*` and `AI_*` variables listed in `.env.example`. The 24-hour window starts with the first accepted request; these are request caps, not exact token-spend limits or authentication. Allowed public requests can still consume the configured budget. IP limits use Vercel's overwritten forwarded-IP header on Vercel, and the socket address elsewhere; configure host-specific trusted proxy handling before using another platform behind a proxy.
+
+Development uses the production handlers through a shared Vite adapter, so validation and limits apply locally too. The adapter caps streamed request bodies; AI handlers also enforce a 32 KB limit on parsed JSON bodies independently of framework settings.
