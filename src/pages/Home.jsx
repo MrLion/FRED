@@ -1,31 +1,14 @@
 import { AtlasLink as Link } from '../features/atlas/AtlasNavigation';
 import { useState, useEffect } from 'react';
 
-import { getCategoryChildren, getSeriesObservations, getSeries } from '../api/fred';
-import { useFred } from '../hooks/useFred';
-import Chart from '../components/LazyChart';
-import Loading, { ErrorMessage } from '../components/Loading';
-import { Landmark, Briefcase, BarChart3, Factory, TrendingUp, TrendingDown, Globe, MapPin, GraduationCap } from 'lucide-react';
+import { getSeriesObservations, getSeries } from '../api/fred';
+import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 
-const fetchCategories = () => getCategoryChildren(0);
-const categoryIconMap = {
-  32991: Landmark,       // Money, Banking, & Finance
-  10:    Briefcase,      // Population, Employment, & Labor Markets
-  32992: BarChart3,      // National Accounts
-  33060: Factory,        // Production & Business Activity
-  32455: TrendingUp,     // Prices
-  32263: Globe,          // International Data
-  3008:  MapPin,         // U.S. Regional Data
-  33287: GraduationCap,  // Academic Data
-};
-
-function getCategoryIcon(id) {
-  return categoryIconMap[id] || BarChart3;
-}
+import { SNAPSHOT, snapshotData, snapshotValue, snapshotChange, observationLabel } from '../features/overview/snapshot';
 
 const KEY_INDICATOR_IDS = ['GDP', 'UNRATE', 'CPIAUCSL', 'FEDFUNDS'];
-const INDICATOR_NAMES = { GDP: 'Gross domestic product', UNRATE: 'Unemployment', CPIAUCSL: 'Consumer prices', FEDFUNDS: 'Fed funds rate' };
-const INDICATORS_CACHE_KEY = 'fred_indicators_cache_v3';
+const INDICATOR_NAMES = Object.fromEntries(Object.entries(SNAPSHOT).map(([id,details])=>[id,details.name]));
+const INDICATORS_CACHE_KEY = 'fred_indicators_cache_v4';
 const INDICATORS_TTL = 5 * 60 * 1000;
 
 function readIndicatorsCache() {
@@ -67,11 +50,7 @@ function useKeyIndicators() {
             getSeries(id),
             getSeriesObservations(id, { limit: 90, sort_order: 'desc' }),
           ]);
-          const valid = obs.filter(o => o.value !== '.' && Number.isFinite(Number(o.value)));
-          const current = valid.length > 0 ? Number(valid[0].value) : null;
-          const prior = valid.length > 1 ? Number(valid[1].value) : null;
-          const delta = prior && prior !== 0 ? ((current - prior) / Math.abs(prior)) * 100 : null;
-          return { id, name: INDICATOR_NAMES[id], units: info?.units, points: [...obs].reverse(), value: current, delta, date: obs.length > 0 ? obs[0].date : null, loading: false };
+          return snapshotData(id,info,obs);
         })
       );
 
@@ -94,12 +73,28 @@ function useKeyIndicators() {
   return indicators;
 }
 
-function Sparkline({ points }) {
-  const values = (points || []).filter(o => o.value !== '.').map(o => Number(o.value)).filter(Number.isFinite);
-  if (values.length < 2) return null;
-  const min = Math.min(...values);
-  const span = Math.max(...values) - min || 1;
-  return <svg className="indicator-sparkline" viewBox="0 0 160 36" aria-hidden="true"><polyline points={values.map((value, i) => `${i / (values.length - 1) * 160},${32 - (value - min) / span * 28}`).join(' ')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>;
+function Sparkline({ points, title }) {
+  const all = (points || []).filter(p => p.value !== '.' && Number.isFinite(Number(p.value)));
+  if (all.length < 2) return null;
+  const end = Date.parse(all.at(-1).date);
+  const cutoff = new Date(end); cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 5);
+  const recent = (points || []).filter(p => Date.parse(p.date) >= cutoff.getTime());
+  const valid = recent.filter(p => p.value !== '.' && Number.isFinite(Number(p.value)));
+  if (valid.length < 2) return null;
+  const min = Math.min(...valid.map(p => Number(p.value)));
+  const max = Math.max(...valid.map(p => Number(p.value)));
+  const start = Date.parse(valid[0].date);
+  let path = '', gap = true;
+  recent.forEach(p => {
+    if (p.value === '.' || !Number.isFinite(Number(p.value))) { gap = true; return; }
+    const x = 4 + (Date.parse(p.date) - start) / (end - start || 1) * 472;
+    const y = 86 - (Number(p.value) - min) / (max - min || 1) * 70;
+    path += `${gap ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)} `; gap = false;
+  });
+  return <div className="snapshot-trend"><svg className="indicator-sparkline" viewBox="0 0 480 100" preserveAspectRatio="none" role="img" aria-label={`${title}, ${valid[0].date} to ${valid.at(-1).date}. Values ${min.toLocaleString()} to ${max.toLocaleString()}.`}>
+    {[16,51,86].map(y=><line key={y} x1="4" x2="476" y1={y} y2={y} stroke="currentColor" opacity=".1" vectorEffect="non-scaling-stroke"/>)}
+    <path d={path} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
+  </svg><div className="snapshot-trend-dates"><span>{valid[0].date.slice(0,4)}</span><span>{valid.at(-1).date.slice(0,4)}</span></div></div>;
 }
 
 function timeAgo(ts) {
@@ -117,9 +112,6 @@ function timeAgo(ts) {
 
 export default function Home({ recentlyViewed, clearHistory }) {
   const [showAllRecent, setShowAllRecent] = useState(false);
-  const { data: categories, loading, error, refetch } = useFred(
-    fetchCategories
-  );
   const indicators = useKeyIndicators();
 
   return (
@@ -127,31 +119,28 @@ export default function Home({ recentlyViewed, clearHistory }) {
 
       <div className="page-intro"><span className="eyebrow">YOUR ECONOMIC PERSPECTIVE</span><h1>The economy, at a glance.</h1><p>Explore the numbers behind the headlines.</p><Link to="/search" className="overview-explore">Ask a question or explore data →</Link></div>
       {/* Key Indicators */}
-      <div className="key-indicators-label">Key Indicators</div>
+      <div className="key-indicators-label">National snapshot</div>
       <div className="key-indicators-grid">
         {indicators.map(ind => (
           <Link key={ind.id} className="key-indicator-card" to={`/series/${ind.id}`}>
-            <div className="ki-name">{ind.name || INDICATOR_NAMES[ind.id]}</div>
-            <div className="ki-value">
-              {ind.loading ? '…' : ind.value != null ? Number(ind.value).toLocaleString() : '—'}
+            <div className="snapshot-card-heading"><div className="ki-name">{ind.name || INDICATOR_NAMES[ind.id]}</div>{ind.date&&<span className="ki-date">{observationLabel(ind.date,ind.id)}</span>}</div>
+            <div className="snapshot-value-row"><div className="ki-value">{ind.loading ? '…' : ind.value != null ? snapshotValue(ind.value,ind.id) : '—'}</div>
+              {ind.delta != null && <span className={`delta-chip ${ind.delta>0?'delta-positive':ind.delta<0?'delta-negative':'delta-na'}`} title={`${snapshotChange(ind.delta,ind.id)} versus ${observationLabel(ind.priorDate,ind.id)}`}>
+                {ind.delta>0?<TrendingUp size={13}/>:ind.delta<0?<TrendingDown size={13}/>:null}
+                {snapshotChange(ind.delta,ind.id).replace(' percentage points',' pp')}
+                <span className="delta-period">vs {observationLabel(ind.priorDate,ind.id)}</span>
+              </span>}
             </div>
-            <div className="ki-units">{ind.units || "Economic indicator"}</div>
-            {ind.delta != null && (
-              <span className={`delta-chip ${ind.delta >= 0 ? 'delta-positive' : 'delta-negative'}`}>
-                {ind.delta >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                {ind.delta >= 0 ? '+' : ''}{ind.delta.toFixed(1)}% <span className="delta-period">vs prior observation</span>
-              </span>
-            )}
-            <Sparkline points={ind.points} />
-            {ind.date && <div className="ki-date">As of {ind.date}</div>}
+            <div className="ki-units" title={`${SNAPSHOT[ind.id].note} ${ind.seasonalAdjustment||''}`}>{SNAPSHOT[ind.id].units}</div>
+            <Sparkline points={ind.points} title={INDICATOR_NAMES[ind.id]}/>
+
           </Link>
         ))}
       </div>
 
-      {indicators.find(ind => ind.id === 'UNRATE')?.points?.length > 0 && <section className="overview-chart"><div className="home-section-header"><div><span className="eyebrow">IN FOCUS</span><h2>Unemployment rate</h2><p>Percent of the labor force · Recent observations</p></div><Link to="/series/UNRATE">Explore series →</Link></div><Chart observations={indicators.find(ind => ind.id === 'UNRATE').points} title="Unemployment rate" /></section>}
 
-      {/* Two-column: Recently Viewed + Browse Categories */}
-      <div className="home-two-col">
+      {/* Recently viewed */}
+      <div className="home-recent-section">
 
         {/* Recently Viewed */}
         <section className="home-section">
@@ -186,25 +175,6 @@ export default function Home({ recentlyViewed, clearHistory }) {
           )}
         </section>
 
-        {/* Browse Categories */}
-        <section className="home-section">
-          <div className="home-section-header"><h2>Explore topics</h2><Link to="/categories">All topics →</Link></div>
-          {loading && <Loading text="Loading categories..." />}
-          {error && <ErrorMessage message={error} onRetry={refetch} />}
-          {categories && (
-            <div className="category-grid">
-              {categories.map(cat => {
-                const Icon = getCategoryIcon(cat.id);
-                return (
-                  <Link key={cat.id} className="category-card" to={`/categories/${cat.id}`}>
-                    <Icon size={24} className="category-icon" />
-                    <span className="category-name">{cat.name}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </section>
 
       </div>
     </div>

@@ -77,10 +77,10 @@
 .has-workspace .atlas-region-picker select { width:100%; min-width:0; }
 .has-workspace .atlas-legend { left:24px; width:calc(26% - 48px); max-width:280px; bottom:22px; padding:12px; box-shadow:none; }
 .has-workspace .atlas-color-key small { font-size:7px; letter-spacing:-.04em; }
-.has-workspace .atlas-hover { top:540px; left:13%; max-width:23%; width:max-content; }
+.has-workspace .atlas-hover { top:100px; left:13%; max-width:calc(26% - 48px); width:max-content; z-index:5; background:#fffdf2; }
 .has-workspace .atlas-map-hint,.has-workspace .atlas-attribution { display:none; }
 .has-workspace .atlas-zoom { left:24px; right:auto; bottom:auto; top:550px; }
-@media(max-height:850px) and (min-width:801px) { .has-workspace .atlas-legend { display:none; } .economic-atlas .has-workspace .atlas-map { top:285px; height:210px; } .has-workspace .atlas-zoom { top:500px; } .has-workspace .atlas-hover { top:460px; } }
+@media(max-height:850px) and (min-width:801px) { .has-workspace .atlas-legend { display:none; } .economic-atlas .has-workspace .atlas-map { top:285px; height:210px; } .has-workspace .atlas-zoom { top:500px; } .has-workspace .atlas-hover { top:100px; } }
 @media(max-width:1100px) and (min-width:801px) { .atlas-workspace { margin-left:240px; } .has-workspace .atlas-layer-toolbar,.has-workspace .atlas-region-picker,.has-workspace .atlas-legend { width:192px; } .economic-atlas .has-workspace .atlas-map { width:240px; } .has-workspace .atlas-hover { left:120px; } .atlas-workspace .page { padding:24px; } .atlas-workspace .topic-directory,.atlas-workspace .release-directory,.atlas-workspace .home-two-col { grid-template-columns:1fr; } }
 @media(max-width:800px) {
   .atlas-header .header-search { order:3; flex-basis:100%; margin:0; height:39px; max-width:none; }
@@ -159,3 +159,20 @@
 }
 
 .chart-range-caption { font-size:9px; color:#7b846e; margin:-4px 0 15px; }
+
+/* Compact national snapshot: let the trend occupy the card width. */
+.home-page .key-indicator-card {padding:18px 20px 12px}
+.snapshot-card-heading {display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.snapshot-card-heading .ki-name {font-size:13px;min-height:0;color:#203752}
+.snapshot-card-heading .ki-date {margin:0;flex-shrink:0;font-size:10px}
+.snapshot-value-row {display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:10px 0 4px}
+.snapshot-value-row .ki-value {margin:0;font-size:30px}
+.home-page .ki-units {min-height:0;margin:0;font-size:10px}
+.home-page .snapshot-value-row .delta-chip {font-size:11px;gap:5px;flex-wrap:wrap}
+.home-page .snapshot-value-row .delta-positive {background:#e5f2e9;color:#207343}
+.home-page .snapshot-value-row .delta-negative {background:#fbe9e5;color:#ad382f}
+.home-page .snapshot-value-row .delta-na {background:#eeede5;color:#61695e}
+.snapshot-value-row .delta-period {font-size:9px}
+.home-page .snapshot-trend .indicator-sparkline {height:112px;width:100%;margin:12px 0 0;color:#3264c8}
+.snapshot-trend-dates {display:flex;justify-content:space-between;color:#738076;font-size:9px;margin:0 0 2px}
+@media(max-width:640px){.home-page .key-indicators-grid{grid-template-columns:1fr}.home-page .key-indicator-card{padding:15px}.snapshot-value-row .ki-value{font-size:28px}.home-page .snapshot-trend .indicator-sparkline{height:100px}}

@@ -2,13 +2,13 @@ import { AtlasLink as Link, useAtlasNavigate as useNavigate } from '../features/
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { searchSeries } from '../api/fred';
-import { Search, X, ArrowUpRight, ChartNoAxesColumnIncreasing, Settings } from 'lucide-react';
+import { Search, X, ArrowUpRight, Settings } from 'lucide-react';
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const committed = location.pathname === '/search' ? new URLSearchParams(location.search).get('q') || '' : '';
-  return <header className="atlas-header"><Link className="atlas-brand" to="/"><span className="atlas-wordmark">FRED</span><span className="atlas-brand-rule"/><span>ECONOMIC<br/>ATLAS</span></Link><SearchInput key={`${location.pathname}:${committed}`} initialQuery={committed} onNavigate={navigate}/><div className="atlas-header-actions"><Link to="/overview"><ChartNoAxesColumnIncreasing size={17}/><span>National overview</span></Link><Link to="/settings" aria-label="Settings"><Settings size={18}/></Link></div></header>;
+  return <header className="atlas-header"><Link className="atlas-brand" to="/"><span className="atlas-wordmark">FRED</span><span className="atlas-brand-rule"/><span>ECONOMIC<br/>ATLAS</span></Link><SearchInput key={`${location.pathname}:${committed}`} initialQuery={committed} onNavigate={navigate}/><div className="atlas-header-actions"><Link to="/settings" aria-label="Settings"><Settings size={18}/></Link></div></header>;
 }
 
 function SearchInput({ initialQuery, onNavigate }) {
